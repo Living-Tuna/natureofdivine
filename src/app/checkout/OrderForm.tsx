@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { placeOrder, validateDiscountCode, trackEvent, calculateOrderTotalAction, fetchOrderByIdAction } from '@/lib/actions';
+import { placeOrder, validateDiscountCode, fetchOrderByIdAction } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { countries } from '@/lib/countries';
 import type { SiteSettings } from '@/lib/definitions';
-import { books, combos } from '@/lib/data';
+import { books } from '@/lib/data';
 
 const DetailsSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -174,86 +174,21 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
         }
     }, []);
 
-    // Initialize Items from Search Params
+    // Initialize Item from Search Params (single book)
     useEffect(() => {
-        const bookIdParam = searchParams.getAll('bookId[]');
-        const qtyParam = searchParams.getAll('qty[]');
-        const singleBookId = searchParams.get('bookId');
-        const comboId = searchParams.get('comboId');
-        const variant = searchParams.get('variant') as BookVariant || 'paperback';
+        const variant = (searchParams.get('variant') as BookVariant | null) || 'paperback';
+        const ntd = books.find(b => b.id === 'nature-of-the-divine') || books[0];
 
-        let initialItems: OrderItem[] = [];
+        const initialItem: OrderItem = {
+            id: ntd.id,
+            name: ntd.title,
+            type: 'book',
+            price: ntd.price,
+            quantity: 1,
+            variant: variant === 'hardcover' ? 'hardcover' : 'paperback',
+        };
 
-        // 1. Handle Cart (Multi-item)
-        if (bookIdParam.length > 0) {
-            bookIdParam.forEach((id, index) => {
-                const book = books.find(b => b.id === id);
-                const quantity = parseInt(qtyParam[index] || '1');
-                if (book) {
-                    initialItems.push({
-                        id: book.id,
-                        name: book.title,
-                        type: 'book',
-                        price: book.price,
-                        quantity: quantity,
-                        variant: variant === 'hardcover' ? 'hardcover' : 'paperback'
-                    });
-                }
-            });
-        } 
-        // 2. Handle Single Combo
-        else if (comboId) {
-            const combo = combos.find(c => c.id === comboId);
-            if (combo) {
-                initialItems.push({
-                    id: combo.id,
-                    name: combo.name,
-                    type: 'combo',
-                    price: combo.price,
-                    quantity: 1,
-                    subItems: combo.books.map(bId => {
-                        const book = books.find(b => b.id === bId);
-                        return {
-                            bookId: bId,
-                            title: book?.title || 'Unknown Book',
-                            status: 'pending'
-                        };
-                    })
-                });
-            }
-        } 
-        // 3. Handle Single Book
-        else if (singleBookId) {
-            const book = books.find(b => b.id === singleBookId);
-            if (book) {
-                initialItems.push({
-                    id: book.id,
-                    name: book.title,
-                    type: 'book',
-                    price: book.price,
-                    quantity: 1,
-                    variant: variant === 'hardcover' ? 'hardcover' : 'paperback'
-                });
-            }
-        } 
-        // 4. Default
-        else {
-            const ntd = books.find(b => b.id === 'nature-of-the-divine');
-            if (ntd) {
-                initialItems.push({
-                    id: ntd.id,
-                    name: ntd.title,
-                    type: 'book',
-                    price: ntd.price,
-                    quantity: 1,
-                    variant: variant === 'hardcover' ? 'hardcover' : 'paperback'
-                });
-            }
-        }
-
-        if (initialItems.length > 0) {
-            dispatch({ type: 'SET_ITEMS', payload: initialItems });
-        }
+        dispatch({ type: 'SET_ITEMS', payload: [initialItem] });
     }, [searchParams]);
 
     // Handle Order Verification (Payment Redirects)
@@ -681,7 +616,7 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
                                 </div>
                                 <div className="flex justify-between text-sm text-emerald-600">
                                     <span className="flex items-center gap-1.5"><BadgePercent className="h-4 w-4" /> Discount</span>
-                                    <span className="font-medium">-₹{state.orderSummary?.discountAmount || 0}</span>
+                                    <span className="font-medium">-₹{state.discount.applied && state.orderSummary ? Math.round(state.orderSummary.productPrice * (state.discount.percent / 100)) : 0}</span>
                                 </div>
                                 <div className="flex justify-between text-sm text-emerald-600">
                                     <span className="flex items-center gap-1.5"><Ship className="h-4 w-4" /> Shipping</span>

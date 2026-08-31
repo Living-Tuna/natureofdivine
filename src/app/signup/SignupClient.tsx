@@ -1,11 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { startGoogleOAuth, consumeGoogleOAuth, consumeGoogleError, signInWithGoogleIdToken } from '@/lib/google-oauth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,40 @@ export function SignupClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
+  useEffect(() => {
+    const googleError = consumeGoogleError();
+    if (googleError) {
+      toast({
+        variant: 'destructive',
+        title: 'Google Sign-In failed',
+        description: 'We couldn\'t complete the sign-in. Please try again.',
+      });
+    }
+
+    const oauth = consumeGoogleOAuth();
+    if (!oauth) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await signInWithGoogleIdToken(oauth.token);
+        await trackEvent('user_signup', { method: 'google' });
+        toast({ title: "Account created successfully!" });
+        router.replace(oauth.redirect);
+      } catch (error: any) {
+        if (!cancelled) {
+          toast({
+            variant: 'destructive',
+            title: 'Google Sign-In failed',
+            description: error.message,
+          });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, toast]);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -63,23 +98,11 @@ export function SignupClient() {
     }
   };
   
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      await trackEvent('user_signup', { method: 'google' });
-      toast({ title: "Account created successfully!" });
-      router.push('/');
-    } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Google Sign-In failed',
-            description: error.message,
-        });
-    } finally {
-        setIsGoogleLoading(false);
-    }
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect') || '/';
+    startGoogleOAuth(redirect, '/signup');
   };
 
   return (

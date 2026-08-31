@@ -26,6 +26,8 @@ const statusInfo: Record<OrderStatus, { label: string; Icon: React.ElementType; 
   delivered: { label: 'Delivered', Icon: CheckCircle, color: 'bg-green-500' },
   cancelled: { label: 'Cancelled', Icon: XCircle, color: 'bg-red-500' },
   pending: { label: 'Payment Pending', Icon: Clock, color: 'bg-gray-500' },
+  breached: { label: 'Cancelled', Icon: XCircle, color: 'bg-red-500' },
+  refunded: { label: 'Refunded', Icon: CheckCircle, color: 'bg-blue-500' },
 };
 
 function ReviewDialog({ order, isOpen, onOpenChange }: { order: Order; isOpen: boolean; onOpenChange: (open: boolean) => void }) {

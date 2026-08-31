@@ -4,8 +4,9 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Toaster } from "@/components/ui/toaster";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { Toaster } from "@/components/ui/toaster";
+import { SITE, BOOK, META, SCHEMA } from "@/lib/constants";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LocationProvider } from "@/hooks/useLocation";
 
@@ -17,69 +18,45 @@ const garamond = EB_Garamond({
   variable: "--font-garamond",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_HOST_URL || "https://natureofthedivine.com";
+const siteUrl = process.env.NEXT_PUBLIC_HOST_URL || `https://${SITE.domain}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Nature of the Divine | The Science of Spiritual Awakening & Universal Intelligence",
-    template: "%s | Nature of the Divine",
+    default: META.defaultTitle,
+    template: META.titleTemplate,
   },
-  description:
-    "Stop searching. Start aligning. 'Nature of the Divine' by Alfas B is the blueprint for unshakeable clarity. Decode the architecture of your soul and find the peace that has been waiting for you.",
-  keywords: [
-    "Nature of the Divine",
-    "Spiritual Awakening",
-    "Universal Intelligence",
-    "How to find inner peace",
-    "Overcoming anxiety spiritually",
-    "Meaning of life",
-    "Alfas B",
-    "Advanced Spirituality",
-    "Sacred Realignment",
-    "Divine Algorithms",
-    "Existential Clarity",
-    "Beyond Religion",
-    "Pure Intelligence",
-    "Higher Consciousness",
-    "Modern Mysticism",
-    "Transcendental Logic",
-    "Spiritual Transformation 2025",
-    "Best Spiritual Books 2026",
-    "Conscious Living Blueprint",
-  ],
-  authors: [{ name: "Alfas B", url: siteUrl }],
-  creator: "Alfas B",
-  publisher: "Notion Press",
+  description: META.description,
+  keywords: META.keywords,
+  authors: [{ name: SITE.author, url: siteUrl }],
+  creator: SITE.author,
+  publisher: SCHEMA.publisher,
   category: "Religion & Spirituality",
 
   alternates: {
     canonical: "/",
   },
 
-
   openGraph: {
-    title: "Nature of the Divine | Align with Universal Intelligence",
-    description:
-      "The search is over. Discover the profound logic behind your existence and how to re-align with the Infinite Pulse of reality.",
+    title: META.ogTitle,
+    description: META.ogDescription,
     url: siteUrl,
-    siteName: "Nature of the Divine",
+    siteName: META.siteName,
     images: [
       {
-        url: "/logo.svg",
-        alt: "Nature of the Divine Logo",
+        url: META.ogImage,
+        alt: META.siteName,
       },
     ],
-    locale: "en_US",
+    locale: META.locale,
     type: "website",
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Nature of the Divine | Deciphering the Divine Algorithm",
-    description:
-      "Dismantle the static. Activate your brilliance. A guide to spiritual evolution for the modern seeker.",
-    images: ["/logo.svg"],
+    title: META.twitterTitle,
+    description: META.twitterDescription,
+    images: [META.twitterImage],
   },
 
   robots: {
@@ -94,7 +71,6 @@ export const metadata: Metadata = {
     },
   },
 
-
   icons: {
     icon: "/logo.svg",
     shortcut: "/logo.svg",
@@ -108,10 +84,6 @@ export const viewport = {
   maximumScale: 1,
 };
 
-import { SupportChat } from "@/components/SupportChat";
-import { CartProvider } from "@/lib/cart-context";
-import { CartDrawer } from "@/components/CartDrawer";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -120,10 +92,10 @@ export default function RootLayout({
   const bookSchema = {
     "@context": "https://schema.org",
     "@type": "Book",
-    name: "Nature of the Divine",
+    name: BOOK.title,
     author: {
       "@type": "Person",
-      name: "Alfas B",
+      name: SITE.author,
       url: siteUrl,
       address: {
         "@type": "PostalAddress",
@@ -133,25 +105,19 @@ export default function RootLayout({
     },
     publisher: {
       "@type": "Organization",
-      name: "Notion Press",
+      name: SCHEMA.publisher,
     },
     inLanguage: "en",
-    isbn: "978-9334306514",
+    isbn: SCHEMA.isbn,
     bookFormat: "http://schema.org/Paperback",
-    url: "https://natureofthedivine.com",
-    description:
-      "A spiritual book by Alfas B that explores the mind, the divine, and how to improve in life by aligning with the nature of existence. This work answers questions like 'Is God real?' and explains humanity's complex struggles with an elegant solution.",
-    datePublished: "2025-06-01",
+    url: siteUrl,
+    description: SCHEMA.description,
+    datePublished: SCHEMA.datePublished,
     image: `${siteUrl}/logo.svg`,
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "5",
-      reviewCount: "1",
-    },
     offers: {
       "@type": "Offer",
-      price: "299.00",
-      priceCurrency: "INR",
+      price: BOOK.price,
+      priceCurrency: BOOK.currency,
       availability: "https://schema.org/InStock",
       seller: {
         "@type": "Organization",
@@ -179,19 +145,13 @@ export default function RootLayout({
       >
         <AuthProvider>
           <LocationProvider>
-            <CartProvider>
-              <div className="relative flex min-h-screen flex-col">
-                <SiteHeader />
-                <main className="flex-1 pb-24 md:pb-0">{children}</main>
-                <SiteFooter />
-              </div>
-              <div className="md:hidden">
-                <MobileBottomNav />
-              </div>
-              <CartDrawer />
-              <SupportChat />
-              <Toaster />
-            </CartProvider>
+            <div className="relative flex min-h-screen flex-col pb-20 md:pb-0">
+              <SiteHeader />
+              <main className="flex-1">{children}</main>
+              <SiteFooter />
+              <MobileBottomNav />
+            </div>
+            <Toaster />
           </LocationProvider>
         </AuthProvider>
       </body>

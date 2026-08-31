@@ -53,8 +53,8 @@ export const initializeChapters = async (): Promise<void> => {
         defaultChapters.forEach((chapter) => {
             const docRef = doc(db, 'chapters', `chapter-${chapter.number}`);
             const chapterData = {
-                id: `chapter-${chapter.number}`,
                 ...chapter,
+                id: `chapter-${chapter.number}`,
             };
             batch.set(docRef, chapterData);
         });
