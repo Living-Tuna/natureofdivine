@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,13 +5,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { startGoogleOAuth, consumeGoogleOAuth, consumeGoogleError, signInWithGoogleIdToken } from '@/lib/google-oauth';
+import { startGoogleOAuth, consumeGoogleError } from '@/lib/google-oauth';
+import { useAuth } from '@/hooks/useAuth';
+import { createEmailSession, sendOtpEmail, verifyOtpEmail } from '@/lib/email-session';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, LogIn } from 'lucide-react';
+import { Loader2, User, LogIn, Mail } from 'lucide-react';
 import { trackEvent } from '@/lib/actions';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -29,10 +30,15 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 export function LoginClient() {
   const router = useRouter();
   const { toast } = useToast();
+  const { refresh } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
 
   useEffect(() => {
     const googleError = consumeGoogleError();
@@ -43,38 +49,16 @@ export function LoginClient() {
         description: 'We couldn\'t complete the sign-in. Please try again.',
       });
     }
-
-    const oauth = consumeGoogleOAuth();
-    if (!oauth) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        await signInWithGoogleIdToken(oauth.token);
-        await trackEvent('user_login', { method: 'google' });
-        if (!cancelled) {
-          toast({ title: "Logged in successfully!" });
-          router.replace(oauth.redirect);
-        }
-      } catch (error: any) {
-        if (!cancelled) {
-          toast({
-            variant: 'destructive',
-            title: 'Google Sign-In failed',
-            description: error.message,
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [router, toast]);
+  }, [toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await credential.user.getIdToken();
+      await createEmailSession(idToken);
+      await refresh();
       await trackEvent('user_login', { method: 'email' });
       toast({ title: "Logged in successfully!" });
       router.push('/');
@@ -96,9 +80,44 @@ export function LoginClient() {
     startGoogleOAuth(redirect, '/login');
   };
 
+  const handleSendOtp = async () => {
+    if (!otpEmail) {
+      toast({ variant: 'destructive', title: 'Email required', description: 'Enter your email first.' });
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const result = await sendOtpEmail(otpEmail);
+      toast({ title: result.ok ? 'Code sent' : 'Couldn\'t send code', description: result.message });
+      if (result.ok) setOtpSent(true);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Couldn\'t send code', description: error.message });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setOtpLoading(true);
+    try {
+      const result = await verifyOtpEmail(otpEmail, otpCode);
+      if (!result.ok) {
+        toast({ variant: 'destructive', title: 'Verification failed', description: result.message });
+        return;
+      }
+      await refresh();
+      await trackEvent('user_login', { method: 'otp' });
+      toast({ title: "Logged in successfully!" });
+      router.push('/');
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Verification failed', description: error.message });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fdfbf7] relative overflow-hidden px-4">
-      {/* Decorative Background Elements */}
+    <div className="min-h-screen flex items-center justify-center bg-[#fdfbf7] relative overflow-hidden px-4 py-12">
       <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
@@ -148,7 +167,7 @@ export function LoginClient() {
             </Button>
           </form>
 
-          <div className="relative my-8">
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border/30" />
             </div>
@@ -170,6 +189,66 @@ export function LoginClient() {
             )}
             <span className="text-sm font-medium">Continue with Google</span>
           </Button>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border/30" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em]">
+              <span className="bg-white px-4 text-muted-foreground/60">Or use an email code</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                className="h-12 rounded-xl border-border/50 bg-background/50"
+                value={otpEmail}
+                onChange={(e) => setOtpEmail(e.target.value)}
+              />
+            </div>
+            {otpSent && (
+              <div className="flex gap-2">
+                <Input
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6-digit code"
+                  className="h-12 rounded-xl border-border/50 bg-background/50 text-center tracking-widest"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 px-4 rounded-xl border-border/50"
+                  onClick={handleVerifyOtp}
+                  disabled={otpLoading || otpCode.length !== 6}
+                >
+                  {otpLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                  Verify
+                </Button>
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12 rounded-xl border-border/50 gap-2"
+              onClick={handleSendOtp}
+              disabled={otpLoading || !otpEmail}
+            >
+              {otpLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              <span className="text-sm font-medium">{otpSent ? 'Resend code' : 'Send sign-in code'}</span>
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Codes work for new visitors too — no password needed.
+            </p>
+          </div>
 
           <div className="mt-8 text-center text-sm text-muted-foreground">
             New to the Divine?{' '}

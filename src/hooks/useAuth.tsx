@@ -1,47 +1,58 @@
-
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { Loader2 } from 'lucide-react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import type { SessionUser } from '@/lib/definitions';
 
 interface AuthContextType {
-  user: User | null;
+  user: SessionUser | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function fetchSession(): Promise<SessionUser | null> {
+  try {
+    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    const data = await res.json();
+    return (data && data.user) || null;
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+    let cancelled = false;
+    fetchSession().then((session) => {
+      if (!cancelled) {
+        setUser(session);
+        setLoading(false);
+      }
     });
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    try {
+      await fetch('/api/auth/logout', { cache: 'no-store' });
+    } catch {
+    }
     setUser(null);
-  }
+  };
 
-  // Removed blocking loader to allow app to render immediately
-  // if (loading) {
-  //   return (
-  //       <div className="flex justify-center items-center h-screen">
-  //           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  //       </div>
-  //   )
-  // }
+  const refresh = useCallback(async () => {
+    setUser(await fetchSession());
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signOut, refresh }}>
       {children}
     </AuthContext.Provider>
   );

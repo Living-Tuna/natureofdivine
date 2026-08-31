@@ -10,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, User, KeyRound } from 'lucide-react';
-import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { updateSessionDisplayName } from '@/lib/email-session';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function SettingsClient() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, refresh } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -42,7 +43,9 @@ export function SettingsClient() {
     if (!user) return;
     setIsProfileLoading(true);
     try {
-        await updateProfile(user, { displayName });
+        const updated = await updateSessionDisplayName(displayName);
+        if (updated) setDisplayName(updated.displayName || '');
+        await refresh();
         toast({ title: "Profile updated successfully!" });
     } catch (error: any) {
         toast({ variant: 'destructive', title: "Error", description: error.message });
@@ -53,16 +56,21 @@ export function SettingsClient() {
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newPassword || !currentPassword) {
+    if (!user?.email || !newPassword || !currentPassword) {
         toast({ variant: 'destructive', title: 'Error', description: "All password fields are required." });
         return;
     };
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser || user.provider !== 'password') {
+        toast({ variant: 'destructive', title: 'Error', description: "Password changes are only available for email/password accounts." });
+        return;
+    }
     setIsPasswordLoading(true);
 
     try {
-      const credential = EmailAuthProvider.credential(user.email!, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, newPassword);
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(firebaseUser, credential);
+      await updatePassword(firebaseUser, newPassword);
       toast({ title: "Password updated successfully!" });
       setNewPassword('');
       setCurrentPassword('');
@@ -120,7 +128,7 @@ export function SettingsClient() {
           </CardContent>
         </Card>
 
-        {user.providerData.some(p => p.providerId === 'password') && (
+        {user.provider === 'password' && (
             <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><KeyRound/> Change Password</CardTitle>

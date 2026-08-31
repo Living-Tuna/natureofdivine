@@ -185,3 +185,13 @@ export type ShopOrder = {
     paymentDetails?: any;
     createdAt: number;
 };
+
+export type SessionProvider = 'google' | 'password' | 'otp';
+
+export type SessionUser = {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+    provider: SessionProvider;
+};

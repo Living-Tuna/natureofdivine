@@ -1,14 +1,12 @@
 'use client';
 
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-
 /**
  * Starts the Google OAuth flow. The browser is redirected to Google and then
  * back to our own /api/google/callback — the whole journey stays on the
- * nature of the divine domain (no popups, no external shells).
+ * nature of the divine domain (no popups, no external shells). The callback
+ * verifies the token and stores an app session cookie directly.
  *
- * `returnTo` is where the user should land after Google approves them
+ * `returnTo` is where the user should be sent if the flow fails
  * (normally '/login' or '/signup').
  */
 export function startGoogleOAuth(redirect: string = '/', returnTo: string = '/login') {
@@ -16,27 +14,6 @@ export function startGoogleOAuth(redirect: string = '/', returnTo: string = '/lo
   const safeReturnTo = returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/login';
   const params = new URLSearchParams({ redirect: safeRedirect, return_to: safeReturnTo });
   window.location.href = `/api/auth/google?${params.toString()}`;
-}
-
-/**
- * Reads a google_token + redirect pair out of the URL (left by the OAuth
- * callback) and cleans the query string so the token doesn't linger in the
- * address bar.
- */
-export function consumeGoogleOAuth(): { token: string; redirect: string } | null {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('google_token');
-  if (!token) return null;
-
-  const rawRedirect = params.get('redirect') || '/';
-  const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/';
-
-  params.delete('google_token');
-  params.delete('redirect');
-  const remaining = params.toString();
-  window.history.replaceState({}, '', window.location.pathname + (remaining ? `?${remaining}` : ''));
-
-  return { token, redirect };
 }
 
 /**
@@ -52,12 +29,4 @@ export function consumeGoogleError(): string | null {
   const remaining = params.toString();
   window.history.replaceState({}, '', window.location.pathname + (remaining ? `?${remaining}` : ''));
   return error;
-}
-
-/**
- * Completes sign-in with the Google ID token returned by our own callback,
- * using the app's existing Firebase session.
- */
-export async function signInWithGoogleIdToken(idToken: string) {
-  await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
 }

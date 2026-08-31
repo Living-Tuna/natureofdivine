@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { startGoogleOAuth, consumeGoogleOAuth, consumeGoogleError, signInWithGoogleIdToken } from '@/lib/google-oauth';
+import { startGoogleOAuth, consumeGoogleError } from '@/lib/google-oauth';
+import { useAuth } from '@/hooks/useAuth';
+import { createEmailSession } from '@/lib/email-session';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,6 +31,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 export function SignupClient() {
   const router = useRouter();
   const { toast } = useToast();
+  const { refresh } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,30 +48,7 @@ export function SignupClient() {
         description: 'We couldn\'t complete the sign-in. Please try again.',
       });
     }
-
-    const oauth = consumeGoogleOAuth();
-    if (!oauth) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        await signInWithGoogleIdToken(oauth.token);
-        await trackEvent('user_signup', { method: 'google' });
-        toast({ title: "Account created successfully!" });
-        router.replace(oauth.redirect);
-      } catch (error: any) {
-        if (!cancelled) {
-          toast({
-            variant: 'destructive',
-            title: 'Google Sign-In failed',
-            description: error.message,
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [router, toast]);
+  }, [toast]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +64,9 @@ export function SignupClient() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
+      const idToken = await userCredential.user.getIdToken();
+      await createEmailSession(idToken);
+      await refresh();
       await trackEvent('user_signup', { method: 'email' });
       toast({ title: "Account created successfully!" });
       router.push('/');
