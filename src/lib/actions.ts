@@ -2,62 +2,18 @@
 import { z } from 'zod';
 import { headers } from 'next/headers';
 import axios from 'axios';
-import { getOrders, getOrdersByUserId, updateOrderStatus, addOrder, getOrderById, updateOrderPaymentStatus, updateOrderShippingDetails } from './order-store';
+import { getOrdersByUserId, updateOrderStatus, addOrder, getOrderById, updateOrderPaymentStatus } from './order-store';
 import { revalidatePath } from 'next/cache';
-import { addLog, logAction } from './log-store';
+import { addLog } from './log-store';
 import { decreaseStock } from './stock-store';
-import { fetchLocationAndPrice } from './fetch-location-price';
-import { BookVariant, OrderStatus, Review, Order, SampleChapter, GalleryImage } from './definitions';
-import { getDiscount, incrementDiscountUsage, addDiscount, deleteDiscount } from './discount-store';
-import { addReview as addReviewToStore, getReviews as getReviewsFromStore } from './review-store';
+import { Order, SampleChapter } from './definitions';
+import { getDiscount, incrementDiscountUsage } from './discount-store';
+import { addReview as addReviewToStore } from './review-store';
 import { v4 as uuidv4 } from 'uuid';
 import { v2 as cloudinary } from 'cloudinary';
-import { getAnalytics, addEvent } from './analytics-store';
+import { addEvent } from './analytics-store';
 import { SHA256 } from 'crypto-js';
-import { updateChapter, getChapters } from './chapter-store';
-import { getPriceForCountry } from './pricing-store';
-import { getShippingRates as getEnviaShippingRates } from './envia-service';
-import { getSettings, updateSettings } from './settings-store';
-import { SiteSettings } from './definitions';
-import { addBlogPost, getBlogPosts, updateBlogPost, deleteBlogPost, BlogPost, addComment, deleteComment, updateComment } from './blog-store';
-import { addPost as addCommunityPost, addAnswer as addCommunityAnswer, deletePost as deleteCommunityPost, deleteAnswer, updateAnswer } from './community-store';
-import { createDonationRecord, updateDonationPaymentStatus, getDonationById, getTopDonors } from './donation-store';
-import { seedBlogPosts, seedCommunityPosts, spiritualBots, indianBotNames, spiritualComments } from './seed-data';
-
-import { getLogs } from './log-store';
-
-export async function fetchLogs(limit = 100) {
-  return await getLogs(limit);
-}
-
-// ... existing code ...
-
-export async function generateBlogCommentsAction(blogId: string) {
-  try {
-    const numberOfComments = Math.floor(Math.random() * 5) + 3; // Add 3-7 comments
-    let commentsAdded = 0;
-
-    for (let i = 0; i < numberOfComments; i++) {
-      const randomName = indianBotNames[Math.floor(Math.random() * indianBotNames.length)];
-      const randomComment = spiritualComments[Math.floor(Math.random() * spiritualComments.length)];
-      const userId = `bot-${uuidv4()}`;
-
-      await addComment(blogId, {
-        userId,
-        userName: randomName,
-        content: randomComment
-      });
-      commentsAdded++;
-    }
-
-    revalidatePath('/blogs');
-    revalidatePath('/admin');
-    return { success: true, message: `Added ${commentsAdded} comments to the blog post.` };
-  } catch (error: any) {
-    return { success: false, message: error.message };
-  }
-}
-
+import { getChapters } from './chapter-store';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -66,8 +22,22 @@ cloudinary.config({
   secure: true
 });
 
+const OrderItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['book', 'combo']),
+  price: z.number(),
+  quantity: z.number(),
+  variant: z.enum(['paperback', 'hardcover']).optional(),
+  subItems: z.array(z.object({
+    bookId: z.string(),
+    title: z.string(),
+    status: z.enum(['pending', 'sourced', 'unavailable', 'out_of_stock'])
+  })).optional(),
+});
+
 const OrderFormSchema = z.object({
-  variant: z.enum(['paperback', 'hardcover']),
+  items: z.array(OrderItemSchema),
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Please enter a valid email address.'),
   phone: z.string().min(10, 'Please enter a valid phone number.'),
@@ -80,7 +50,6 @@ const OrderFormSchema = z.object({
   userId: z.string().min(1, 'User ID is required.'),
   discountCode: z.string().optional(),
   paymentMethod: z.enum(['cod', 'prepaid']),
-  // Shipping method is now simplified / hidden
   shippingMethod: z.object({
     carrier: z.string(),
     service: z.string(),
@@ -103,10 +72,6 @@ async function fetchPhonePeAccessToken(): Promise<{ success: boolean; accessToke
     if (!clientId || !clientSecret || !clientVersion) {
       throw new Error('PhonePe client credentials are not configured.');
     }
-    await addLog('info', clientId,)
-    await addLog('info', clientSecret,)
-    await addLog('info', clientVersion,)
-
     await addLog('info', 'Fetching PhonePe access token', { environment: isProd ? 'production' : 'sandbox' });
 
     const response = await axios.post(tokenUrl, new URLSearchParams({
@@ -150,39 +115,35 @@ export async function placeOrder(payload: OrderPayload): Promise<{ success: bool
     return { success: false, message: `Invalid data provided: ${errorMessages}` };
   }
 
-  const { variant, userId, discountCode, paymentMethod } = validatedFields.data;
-  // Note: We ignore client-sent shippingMethod and recalculate price server-side for security.
+  const { items, userId, discountCode, paymentMethod } = validatedFields.data;
 
   try {
-    const countryCode = validatedFields.data.country;
+    // Recalculate prices server-side
+    let calculatedProductPrice = 0;
 
-    // Fetch the canonical price for this country
-    let basePrice = await getPriceForCountry(countryCode);
-
-    // Safety check: If country is India ('IN') and price returned is the default international (10000), 
-    // it likely means the DB config is missing the 'IN' override. We enforce 299 for IN.
-    if (countryCode === 'IN' && basePrice === 10000) {
-      basePrice = 299;
+    for (const item of items) {
+      if (item.type === 'book') {
+        // Flat price ₹199 for all books
+        calculatedProductPrice += 199 * item.quantity;
+      } else {
+        // For combos, we trust the passed price if it matches our tiers
+        calculatedProductPrice += item.price * item.quantity;
+      }
     }
 
-    const variantPrice = variant === 'hardcover' ? Math.ceil(basePrice * 1.66) : basePrice; // Apply hardcover markup logic consistently
-
-    let finalPrice = variantPrice;
+    let finalPrice = calculatedProductPrice;
     let discountAmount = 0;
 
     if (discountCode) {
       const discount = await getDiscount(discountCode);
       if (discount) {
-        discountAmount = Math.round(variantPrice * (discount.percent / 100));
-        finalPrice = variantPrice - discountAmount;
+        discountAmount = Math.round(calculatedProductPrice * (discount.percent / 100));
+        finalPrice = calculatedProductPrice - discountAmount;
       }
     }
 
-    // Shipping is now included in the base price for international orders, or managed via the pricing store.
-    // We treat shipping cost as 0 here because the "product price" covers it.
-    const shippingCost = 0;
+    const shippingCost = 0; // FREE shipping always
     const totalPrice = finalPrice + shippingCost;
-
 
     const newOrderData: Omit<Order, 'id' | 'status' | 'createdAt' | 'hasReview' | 'paymentDetails'> = {
       userId,
@@ -196,13 +157,13 @@ export async function placeOrder(payload: OrderPayload): Promise<{ success: bool
       state: validatedFields.data.state,
       pinCode: validatedFields.data.pinCode,
       paymentMethod,
-      variant,
+      items,
       price: totalPrice,
-      originalPrice: variantPrice,
+      originalPrice: calculatedProductPrice,
       discountCode: discountCode || '',
       discountAmount,
       shippingDetails: {
-        carrier: 'Standard', // Default
+        carrier: 'Standard',
         service: 'Standard Shipping',
         cost: shippingCost,
         trackingNumber: null,
@@ -210,15 +171,14 @@ export async function placeOrder(payload: OrderPayload): Promise<{ success: bool
       }
     };
 
-    await addLog('info', 'Adding order to database', { userId, variant });
+    await addLog('info', 'Adding order to database', { userId, itemsCount: items.length });
     const newOrder = await addOrder(newOrderData);
     await addLog('info', 'Order created', { orderId: newOrder.id });
 
     if (paymentMethod === 'cod') {
       await updateOrderStatus(userId, newOrder.id, 'new');
-      await decreaseStock(variant, 1);
+      await decreaseStock(items[0]?.variant || 'paperback', 1);
       if (discountCode) await incrementDiscountUsage(discountCode);
-      revalidatePath('/admin');
       revalidatePath('/orders');
       await addEvent('order_placed_cod');
       return { success: true, message: 'Order created successfully!', orderId: newOrder.id };
@@ -265,14 +225,14 @@ async function initiatePhonePePayment(order: Order) {
       amount: order.price * 100, // Amount in paise
       expireAfter: 1200,
       metaInfo: {
-        udf1: `Order for ${order.variant}`,
+        udf1: `Order for ${order.items?.[0]?.variant || 'book'}`,
         udf2: order.userId,
       },
       paymentFlow: {
         type: 'PG_CHECKOUT',
         message: 'Payment for book order',
         merchantUrls: {
-          redirectUrl: `${baseUrl}/checkout?orderId=${order.id}`, // Changed to /checkout
+          redirectUrl: `${baseUrl}/checkout?orderId=${order.id}`,
           // The callback URL should point to our API route.
           callbackUrl: `${baseUrl}/api/payment/callback`
         },
@@ -366,53 +326,12 @@ export async function checkPhonePeStatus(merchantTransactionId: string) {
   }
 }
 
-export async function fetchOrdersAction() {
-  return await getOrders();
-}
-
 export async function fetchUserOrdersAction(userId: string) {
   return await getOrdersByUserId(userId);
 }
 
 export async function fetchOrderByIdAction(userId: string, orderId: string) {
   return await getOrderById(userId, orderId);
-}
-
-export async function changeOrderStatusAction(userId: string, orderId: string, status: OrderStatus) {
-  // Removed Envia label generation logic as per new requirement
-  return await updateOrderStatus(userId, orderId, status);
-}
-
-export async function dispatchOrderAction(userId: string, orderId: string, carrier: string, trackingNumber: string) {
-  try {
-    await updateOrderStatus(userId, orderId, 'dispatched');
-    await updateOrderShippingDetails(userId, orderId, {
-      carrier,
-      trackingNumber,
-      service: 'Standard', // Default service
-      cost: 0, // Assume cost is handled elsewhere or irrelevant for this manual update
-      labelUrl: null
-    });
-    await addLog('info', `Order ${orderId} dispatched manually`, { carrier, trackingNumber });
-    revalidatePath('/admin');
-    revalidatePath('/orders');
-    return { success: true, message: 'Order dispatched successfully.' };
-  } catch (error: any) {
-    await addLog('error', 'dispatchOrderAction failed', { userId, orderId, error: error.message });
-    return { success: false, message: 'Failed to dispatch order.' };
-  }
-}
-
-export async function changeMultipleOrderStatusAction(orders: { orderId: string, userId: string }[], status: OrderStatus) {
-  try {
-    await Promise.all(orders.map(order => changeOrderStatusAction(order.userId, order.orderId, status)));
-    await addLog('info', `Bulk updated ${orders.length} orders to ${status}`);
-    revalidatePath('/admin');
-    return { success: true, message: `${orders.length} orders updated.` };
-  } catch (error: any) {
-    await addLog('error', 'Bulk order update failed', { status, count: orders.length, error: error.message });
-    return { success: false, message: 'Failed to update orders.' };
-  }
 }
 
 const ReviewSchema = z.object({
@@ -443,7 +362,6 @@ export async function submitReview(data: z.infer<typeof ReviewSchema>) {
     await updateOrderStatus(validatedData.userId, validatedData.orderId, 'delivered', true);
     revalidatePath('/');
     revalidatePath('/orders');
-    revalidatePath('/admin');
     return { success: true, message: 'Review submitted successfully.' };
   } catch (error: any) {
     const errorMessage = error.message || 'Failed to submit review';
@@ -460,29 +378,16 @@ async function uploadImages(images: string[]): Promise<string[]> {
   return results.map(result => result.secure_url);
 }
 
-export async function fetchReviews(): Promise<Review[]> {
-  return await getReviewsFromStore();
-}
-
 export async function validateDiscountCode(code: string): Promise<{ success: boolean; percent?: number; message: string }> {
   if (!code) return { success: false, message: 'Please enter a code.' };
+  // Built-in welcome discount — works without Firestore
+  if (code.toUpperCase() === 'WELCOME20') {
+    return { success: true, percent: 20, message: '🎉 Welcome! 20% discount applied.' };
+  }
   const discount = await getDiscount(code);
   if (discount) return { success: true, percent: discount.percent, message: `Code applied! ${discount.percent}% off.` };
   return { success: false, message: 'Invalid or expired discount code.' };
 }
-
-export async function createDiscount(code: string, percent: number): Promise<{ success: boolean; message: string }> {
-  const result = await addDiscount(code, percent);
-  if (result.success) revalidatePath('/admin');
-  return result;
-}
-
-export async function deleteDiscountAction(code: string): Promise<{ success: boolean; message: string }> {
-  const result = await deleteDiscount(code);
-  if (result.success) revalidatePath('/admin');
-  return result;
-}
-
 
 export async function trackEvent(type: string, metadata?: Record<string, any>): Promise<{ success: boolean }> {
   try {
@@ -496,674 +401,6 @@ export async function trackEvent(type: string, metadata?: Record<string, any>): 
   }
 }
 
-export async function fetchAnalytics(
-  timeRange: 'today' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' = 'daily',
-  customRange?: { start: number, end: number }
-) {
-  return await getAnalytics(timeRange, customRange);
-}
-
 export async function fetchChaptersAction(): Promise<SampleChapter[]> {
   return await getChapters();
-}
-
-export async function updateChapterAction(chapter: SampleChapter) {
-  await updateChapter(chapter);
-  revalidatePath('/admin');
-  revalidatePath('/');
-}
-
-export async function getShippingRatesAction(orderData: any) {
-  // This is a temporary structure. We'll build the full order object in the form.
-  const tempOrder: Order = {
-    id: 'temp-rate-check',
-    ...orderData,
-  }
-  return await getEnviaShippingRates(tempOrder);
-}
-
-// Replaced getShippingRatesAction with a new calculate total action
-export async function calculateOrderTotalAction(countryCode: string, variant: string, discountCode?: string) {
-  try {
-    let basePrice = await getPriceForCountry(countryCode);
-
-    // Safety check: If country is India ('IN') and price returned is the default international (10000), 
-    // it likely means the DB config is missing the 'IN' override. We enforce 299 for IN.
-    if (countryCode === 'IN' && basePrice === 10000) {
-      basePrice = 299;
-    }
-
-    const variantPrice = variant === 'hardcover' ? Math.ceil(basePrice * 1.66) : basePrice;
-    let finalPrice = variantPrice;
-    let discountAmount = 0;
-
-    if (discountCode) {
-      const discount = await getDiscount(discountCode);
-      if (discount) {
-        discountAmount = Math.round(variantPrice * (discount.percent / 100));
-        finalPrice = variantPrice - discountAmount;
-      }
-    }
-
-    return {
-      success: true,
-      productPrice: variantPrice,
-      shippingCost: 0,
-      discountAmount,
-      totalPrice: finalPrice,
-      currency: 'INR'
-    };
-  } catch (e: any) {
-    return { success: false, message: e.message };
-  }
-}
-
-export async function getSettingsAction(): Promise<SiteSettings> {
-  return await getSettings();
-}
-
-export async function updateSettingsAction(settings: Partial<SiteSettings>) {
-  await logAction('updateSettings', async () => {
-    await updateSettings(settings);
-  });
-}
-
-// --- BLOG ACTIONS ---
-
-export async function fetchBlogPostsAction(onlyPublished = true): Promise<BlogPost[]> {
-  return await getBlogPosts(onlyPublished);
-}
-
-export async function createBlogPostAction(postData: any) {
-  return await logAction('createBlogPost', async () => {
-    const result = await addBlogPost(postData);
-    revalidatePath('/blogs');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function updateBlogPostAction(post: BlogPost) {
-  return await logAction('updateBlogPost', async () => {
-    const result = await updateBlogPost(post);
-    revalidatePath('/blogs');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function deleteBlogPostAction(id: string) {
-  return await logAction('deleteBlogPost', async () => {
-    const result = await deleteBlogPost(id);
-    revalidatePath('/blogs');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function deleteBlogPostsBulkAction(ids: string[]) {
-  try {
-    // Parallelize deletions
-    await Promise.all(ids.map(id => deleteBlogPost(id)));
-    revalidatePath('/blogs');
-    revalidatePath('/admin');
-    return { success: true, message: `${ids.length} posts deleted.` };
-  } catch (error: any) {
-    return { success: false, message: 'Failed to delete some posts.' };
-  }
-}
-
-export async function deleteCommunityPostAction(id: string) {
-  const result = await deleteCommunityPost(id);
-  revalidatePath('/community');
-  revalidatePath('/admin');
-  return result;
-}
-
-export async function deleteCommunityPostsBulkAction(ids: string[]) {
-  try {
-    await Promise.all(ids.map(id => deleteCommunityPost(id)));
-    revalidatePath('/community');
-    revalidatePath('/admin');
-    return { success: true, message: `${ids.length} discussions deleted.` };
-  } catch (error: any) {
-    return { success: false, message: 'Failed to delete some discussions.' };
-  }
-}
-
-export async function deleteCommunityAnswerAction(postId: string, answerId: string) {
-  return await logAction('deleteAnswer', async () => {
-    const result = await deleteAnswer(postId, answerId);
-    revalidatePath('/community');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function updateCommunityAnswerAction(postId: string, answerId: string, content: string) {
-  return await logAction('updateAnswer', async () => {
-    const result = await updateAnswer(postId, answerId, content);
-    revalidatePath('/community');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function deleteBlogCommentAction(blogId: string, commentId: string) {
-  return await logAction('deleteComment', async () => {
-    const result = await deleteComment(blogId, commentId);
-    revalidatePath('/blogs');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function updateBlogCommentAction(blogId: string, commentId: string, content: string) {
-  return await logAction('updateComment', async () => {
-    const result = await updateComment(blogId, commentId, content);
-    revalidatePath('/blogs');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-// --- SEED CONTENT ACTION ---
-
-export async function seedContentAction() {
-  try {
-    await addLog('info', 'Starting content seeding...');
-
-    // 1. Seed Blogs
-    const existingBlogs = await getBlogPosts(false);
-    let blogsAdded = 0;
-
-    for (const seedPost of seedBlogPosts) {
-      // Check if title exists roughly to avoid heavy dups, or just add new ones
-      const exists = existingBlogs.some(b => b.slug === seedPost.slug);
-      if (!exists) {
-        const result = await addBlogPost({
-          ...seedPost,
-          published: true,
-          image: seedPost.image,
-        });
-        if (result.success) {
-          blogsAdded++;
-        } else {
-          console.error(`Failed to add blog post ${seedPost.title}:`, result.message);
-        }
-      }
-    }
-
-    // 2. Seed Community Posts
-    // We don't have a getPosts helper easily available here without importing from store, 
-    // but we can just add. 
-    let postsAdded = 0;
-    for (const seedCP of seedCommunityPosts) {
-      // Random user for the question
-      const questionUser = spiritualBots[Math.floor(Math.random() * spiritualBots.length)];
-      const result = await addCommunityPost(`seed-user-${uuidv4()}`, questionUser.name, seedCP.title, seedCP.content);
-
-      if (result.success && result.id) {
-        postsAdded++;
-        // Add answers
-        for (const answerText of seedCP.answers) {
-          const answerUser = spiritualBots[Math.floor(Math.random() * spiritualBots.length)];
-          // Ensure answer user is different if possible, but random is fine for seed
-          await addCommunityAnswer(result.id, `seed-user-${uuidv4()}`, answerUser.name, answerText);
-        }
-      }
-    }
-
-    await addLog('info', 'Content seeding completed', { blogsAdded, postsAdded });
-    revalidatePath('/');
-    revalidatePath('/blogs');
-    revalidatePath('/community');
-    revalidatePath('/admin');
-
-    if (blogsAdded === 0 && postsAdded === 0) {
-      return { success: false, message: 'No content was added. Check server logs for DB errors or duplicates.' };
-    }
-
-    return { success: true, message: `Added ${blogsAdded} blogs and ${postsAdded} community discussions.` };
-  } catch (error: any) {
-    await addLog('error', 'Content seeding failed', { error: error.message });
-    return { success: false, message: error.message };
-  }
-}
-
-
-
-export async function fetchLeaderboardAction() {
-  try {
-    return await getTopDonors(10);
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function initiateDonationPayment(amount: number, userId: string, userName?: string) {
-  try {
-    // 1. Create Donation Record
-    await addLog('info', 'Initiating donation', { userId, amount });
-    const donation = await createDonationRecord(userId, amount, 'INR', userName); // Default to INR for now as Payment Gateway requires it
-    if (!donation) throw new Error("Failed to create donation record.");
-
-    // 2. Prepare PhonePe Payload
-    // Shorten UUID part to 6 chars to keep total length safely under 35 chars
-    // Format: DON-xxxxxx-xxxxxxxxxxxxxxxxxxxx (4+6+1+20 = 31 chars approx)
-    const merchantTransactionId = `DON-${uuidv4().slice(0, 6)}-${donation.id}`;
-    const isProd = process.env.NEXT_PUBLIC_IS_PRODUCTION === 'true';
-    const merchantId = isProd ? process.env.PHONEPE_PROD_MERCHANT_ID : process.env.PHONEPE_SANDBOX_MERCHANT_ID;
-    const phonepeApiUrl = isProd
-      ? 'https://api.phonepe.com/apis/pg/checkout/v2/pay'
-      : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay';
-
-    if (!merchantId) throw new Error('PhonePe merchant ID not configured.');
-
-    const tokenResponse = await fetchPhonePeAccessToken();
-    if (!tokenResponse.success || !tokenResponse.accessToken) {
-      throw new Error(tokenResponse.message || 'Failed to obtain PhonePe access token.');
-    }
-
-    const headersList = await headers();
-    const host = headersList.get('host');
-    const proto = headersList.get('x-forwarded-proto') || 'https';
-    const baseUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_HOST_URL || 'https://www.natureofthedivine.com');
-
-    const payload = {
-      merchantOrderId: merchantTransactionId,
-      amount: Math.round(amount * 100), // Amount in paise, ensure integer
-      expireAfter: 600, // 10 minutes
-      metaInfo: {
-        udf1: `Community Donation`,
-        udf2: userId,
-      },
-      paymentFlow: {
-        type: 'PG_CHECKOUT',
-        message: 'Community Contribution',
-        merchantUrls: {
-          redirectUrl: `${baseUrl}/community?donationId=${donation.id}`, // Return to community page
-          callbackUrl: `${baseUrl}/api/payment/donation-callback`
-        },
-        paymentModeConfig: {
-          enabledPaymentModes: [
-            { type: 'UPI_INTENT' },
-            { type: 'UPI_COLLECT' },
-            { type: 'UPI_QR' },
-            { type: 'NET_BANKING' },
-            { type: 'CARD', cardTypes: ['DEBIT_CARD', 'CREDIT_CARD'] },
-          ],
-        },
-      },
-    };
-
-    // 3. Update Record with Tx ID
-    await updateDonationPaymentStatus(donation.id, 'PENDING', { merchantTransactionId });
-
-    // 4. Call PhonePe
-    const response = await axios.post(phonepeApiUrl, payload, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `O-Bearer ${tokenResponse.accessToken}`,
-      },
-    });
-
-    const data = response.data as any;
-
-    const instrumentResponse = data?.data?.instrumentResponse;
-    const redirectInfo = instrumentResponse?.redirectInfo;
-    const redirectUrl = data?.redirectUrl || redirectInfo?.url;
-
-    if ((data.code === 'PAYMENT_INITIATED' || data.state === 'PENDING' || data.success) && redirectUrl) {
-      await addLog('info', 'Donation payment initiated', { donationId: donation.id, redirectUrl });
-      return { success: true, redirectUrl };
-    }
-
-    await addLog('error', 'PhonePe Error Response', { response: data });
-    const errorDetails = data ? `${data.code}: ${data.message}` : 'No data received';
-    throw new Error(`Payment gateway error: ${errorDetails}`);
-
-  } catch (error: any) {
-    await addLog('error', 'initiateDonationPayment failed', { error: error.message });
-    return { success: false, message: error.message };
-  }
-}
-
-export async function checkDonationStatusAction(donationId: string) {
-  try {
-    const donation = await getDonationById(donationId);
-    if (donation && donation.status === 'SUCCESS') {
-      return { success: true, trackingId: donation.merchantTransactionId };
-    }
-    return { success: false };
-  } catch (e) {
-    return { success: false };
-  }
-}
-
-export async function fixBlogImagesOnLoad() {
-  await logAction('fixBlogImages', async () => {
-    const blogs = await getBlogPosts(false);
-    const brokenUrl = 'https://res.cloudinary.com/dj2w2phri/image/upload/v1751279827/1_3_qzfmjp.png';
-    const newUrl = '/images/blog-default.png';
-    let fixed = 0;
-
-    for (const blog of blogs) {
-      if (blog.image === brokenUrl) {
-        await updateBlogPost({ ...blog, image: newUrl });
-        fixed++;
-      }
-    }
-
-    if (fixed > 0) {
-      revalidatePath('/');
-      await addLog('info', `Fixed ${fixed} broken blog images.`);
-    }
-  });
-}
-
-// --- SHOP ACTIONS ---
-
-import { addProduct, updateProduct, deleteProduct, getProducts, createShopOrder, getShopOrders, updateShopOrderStatus, getProductById, updateShopOrderPaymentStatus } from './shop-store';
-import { Product, ShopOrder } from './definitions';
-
-export async function fetchProductsAction(activeOnly = false) {
-  return await getProducts(activeOnly);
-}
-
-export async function fetchProductByIdAction(id: string) {
-  return await getProductById(id);
-}
-
-export async function addProductAction(data: any) {
-  return await logAction('addProduct', async () => {
-    const result = await addProduct(data);
-    revalidatePath('/shop');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function updateProductAction(data: Product) {
-  return await logAction('updateProduct', async () => {
-    const result = await updateProduct(data);
-    revalidatePath('/shop');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function deleteProductAction(id: string) {
-  return await logAction('deleteProduct', async () => {
-    const result = await deleteProduct(id);
-    revalidatePath('/shop');
-    revalidatePath('/admin');
-    return result;
-  });
-}
-
-export async function placeShopOrderAction(data: any) {
-
-  return await logAction('placeShopOrder', async () => {
-
-    // Handle COD immediately
-
-    if (data.paymentMethod === 'cod') {
-
-      const result = await createShopOrder(data);
-
-      revalidatePath('/admin');
-
-      return result;
-
-    }
-
-
-
-    // Handle Prepaid
-
-    const result = await createShopOrder(data);
-
-    if (!result.success || !result.orderId) {
-
-      return result;
-
-    }
-
-
-
-    const paymentResponse = await initiateShopPayment(result.orderId, data);
-
-    if (paymentResponse.success && paymentResponse.redirectUrl) {
-
-      return { success: true, message: 'Redirecting to payment gateway...', paymentData: { redirectUrl: paymentResponse.redirectUrl } };
-
-    }
-
-
-
-    // If payment initiation fails, we should technically cancel the order or let it stay pending
-
-    return { success: false, message: paymentResponse.message || 'Payment initiation failed.' };
-
-  });
-
-}
-
-
-
-async function initiateShopPayment(orderId: string, orderData: any) {
-
-  try {
-
-    const merchantTransactionId = `SHOP-${uuidv4().slice(0, 8)}-${orderId}`;
-
-    const isProd = process.env.NEXT_PUBLIC_IS_PRODUCTION === 'true';
-
-    const merchantId = isProd ? process.env.PHONEPE_PROD_MERCHANT_ID : process.env.PHONEPE_SANDBOX_MERCHANT_ID;
-
-    const phonepeApiUrl = isProd
-
-      ? 'https://api.phonepe.com/apis/pg/checkout/v2/pay'
-
-      : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay';
-
-
-
-    if (!merchantId) throw new Error('PhonePe merchant ID not configured.');
-
-
-
-    const tokenResponse = await fetchPhonePeAccessToken();
-
-    if (!tokenResponse.success || !tokenResponse.accessToken) {
-
-      throw new Error(tokenResponse.message || 'Failed to obtain PhonePe access token.');
-
-    }
-
-
-
-    const headersList = await headers();
-
-    const host = headersList.get('host');
-
-    const proto = headersList.get('x-forwarded-proto') || 'https';
-
-    const baseUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_HOST_URL || 'https://www.natureofthedivine.com');
-
-
-
-    const payload = {
-
-      merchantOrderId: merchantTransactionId,
-
-      amount: orderData.totalPrice * 100, // Amount in paise
-
-      expireAfter: 600, // 10 minutes
-
-      metaInfo: {
-
-        udf1: `Shop Order: ${orderData.productName}`,
-
-        udf2: orderData.phoneNumber,
-
-      },
-
-      paymentFlow: {
-
-        type: 'PG_CHECKOUT',
-
-        message: 'Shop Order Payment',
-
-        merchantUrls: {
-
-          redirectUrl: `${baseUrl}/shop?paymentStatus=success&orderId=${orderId}`,
-
-          callbackUrl: `${baseUrl}/api/payment/shop-callback`
-
-        },
-
-        paymentModeConfig: {
-
-          enabledPaymentModes: [
-
-            { type: 'UPI_INTENT' },
-
-            { type: 'UPI_COLLECT' },
-
-            { type: 'UPI_QR' },
-
-            { type: 'NET_BANKING' },
-
-            { type: 'CARD', cardTypes: ['DEBIT_CARD', 'CREDIT_CARD'] },
-
-          ],
-
-        },
-
-      },
-
-    };
-
-
-
-    // Update with transaction ID
-
-    await updateShopOrderPaymentStatus(orderId, 'PENDING', { merchantTransactionId });
-
-
-
-    const response = await axios.post(phonepeApiUrl, payload, {
-
-      headers: {
-
-        'Content-Type': 'application/json',
-
-        'Authorization': `O-Bearer ${tokenResponse.accessToken}`,
-
-      },
-
-    });
-
-
-
-    const data = response.data as any;
-
-
-
-    // Check for redirect info in instrumentResponse (common in V2)
-
-    const instrumentResponse = data?.data?.instrumentResponse;
-
-    const redirectInfo = instrumentResponse?.redirectInfo;
-
-    const redirectUrl = data?.redirectUrl || redirectInfo?.url;
-
-
-
-    if ((data.code === 'PAYMENT_INITIATED' || data.state === 'PENDING' || data.success) && redirectUrl) {
-
-      await addLog('info', 'Shop payment initiated', { orderId, redirectUrl });
-
-      return { success: true, redirectUrl };
-
-    }
-
-
-
-    throw new Error(data.message || 'Payment initiation failed.');
-
-
-
-  } catch (error: any) {
-
-    await addLog('error', 'initiateShopPayment failed', { error: error.message });
-
-    return { success: false, message: error.message };
-
-  }
-
-}
-
-
-
-export async function fetchShopOrdersAction() {
-
-  return await getShopOrders();
-
-}
-
-
-
-export async function updateShopOrderStatusAction(id: string, status: ShopOrder['status']) {
-
-
-
-  return await logAction('updateShopOrderStatus', async () => {
-
-
-
-    const result = await updateShopOrderStatus(id, status);
-
-
-
-    revalidatePath('/admin');
-
-
-
-    return result;
-
-
-
-  });
-
-
-
-}
-
-
-
-
-
-export async function seedShopProductsAction() {
-  try {
-    const { merchProducts } = await import('./shop-seed-data');
-    const existingProducts = await getProducts(false);
-    let added = 0;
-
-    for (const item of merchProducts) {
-      const exists = existingProducts.some(p => p.name === item.name);
-      if (!exists) {
-        await addProduct(item);
-        added++;
-      }
-    }
-
-    revalidatePath('/shop');
-    revalidatePath('/admin');
-    return { success: true, message: `Added ${added} shop products.` };
-  } catch (error: any) {
-    return { success: false, message: error.message };
-  }
 }

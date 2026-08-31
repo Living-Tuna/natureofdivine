@@ -1,581 +1,247 @@
-
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform, useSpring, useInView, AnimatePresence } from "framer-motion";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogClose, DialogTitle } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { trackEvent, fetchAnalytics, fixBlogImagesOnLoad } from "@/lib/actions";
-import { cn } from "@/lib/utils";
-import { authorBio, buyLinks, synopsis } from "@/lib/data";
-import { SampleChapter, Stock, Product } from "@/lib/definitions";
-import { BlogPost } from "@/lib/blog-store";
-import { BookOpen, Lock, BookText, User, Quote, Star, ArrowRight, Maximize2, X, ChevronRight, Sparkles, Calendar, MessageCircle, Feather, Truck, CheckCircle } from "lucide-react";
-import dynamic from "next/dynamic";
-import { ProductsSlider } from "@/components/ProductsSlider";
+import { trackEvent } from "@/lib/actions";
+import { BOOK, HOME, synopsis, authorBio, buyLinks, sampleChapters } from "@/lib/constants";
+import { BookImage } from "@/components/BookImage";
+import {
+  Sparkles,
+  ArrowRight,
+  Star,
+  Truck,
+  BookOpen,
+  ShieldCheck,
+  ScrollText,
+  Feather,
+  Quote,
+} from "lucide-react";
+import type { SampleChapter } from "@/lib/definitions";
 
-const DynamicTestimonials = dynamic(() => import('@/components/Testimonials').then(mod => mod.Testimonials), {
-  loading: () => (
-    <div className="w-full py-24 flex justify-center">
-      <Skeleton className="h-64 w-full max-w-4xl rounded-2xl" />
-    </div>
-  ),
-  ssr: false
-});
+const FEATURE_ICONS: Record<string, typeof Star> = {
+  star: Star,
+  truck: Truck,
+  shield: ShieldCheck,
+};
 
-function StarRating({ rating, totalReviews }: { rating: number, totalReviews: number }) {
-  if (totalReviews === 0) return null;
-
+function ChapterCard({ chapter, index }: { chapter: SampleChapter; index: number }) {
   return (
-    <div
-      className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 animate-in fade-in slide-in-from-left-4 duration-500 delay-500 fill-mode-forwards opacity-0"
-      style={{ animationFillMode: 'forwards' }}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.08 }}
+      className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
     >
-      <div className="flex items-center gap-0.5">
-        {[...Array(5)].map((_, i) => (
-          <Star key={i} className={cn("h-4 w-4", i < Math.round(rating) ? "text-primary fill-primary" : "text-muted-foreground/30")} />
-        ))}
+      <div className="flex items-center gap-4 mb-4">
+        <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-headline font-bold text-lg shrink-0">
+          {chapter.number}
+        </div>
+        <div>
+          <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Chapter {chapter.number}</p>
+          <h3 className="font-headline text-lg leading-tight">{chapter.title}</h3>
+        </div>
       </div>
-      <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-        {rating.toFixed(1)} ({totalReviews} reviews)
-      </span>
-    </div>
+      <p className="text-sm text-muted-foreground leading-relaxed">{chapter.content}</p>
+    </motion.div>
   );
 }
 
-interface Book3DProps {
-  src: string;
-}
-
-function Book3D({ src }: Book3DProps) {
-  return (
-    <div className="relative w-[260px] md:w-[320px] aspect-[2/3]">
-      <Image
-        src={src}
-        fill
-        alt="Nature of the Divine Book Cover"
-        className="object-cover rounded-lg"
-        priority
-      />
-    </div>
-  );
-}
-
-interface HomeClientProps {
-  initialChapters: SampleChapter[];
-  stock: Stock;
-  latestBlogs: BlogPost[];
-  products: Product[];
-}
-
-export function HomeClient({ initialChapters, stock, latestBlogs, products }: HomeClientProps) {
-  const [analytics, setAnalytics] = useState<any>(null);
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
-  const y2 = useTransform(scrollY, [0, 500], [0, -150]);
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
-
-  const isOutOfStock = stock.paperback <= 0;
-
+export function HomeClient({ initialChapters }: { initialChapters: SampleChapter[] }) {
   useEffect(() => {
-    trackEvent('page_view_home', { sessionId: crypto.randomUUID() });
-    fixBlogImagesOnLoad(); // Fix any broken images automatically
-    fetchAnalytics().then(setAnalytics);
-  }, [])
+    trackEvent('page_view', { sessionId: crypto.randomUUID() });
+  }, []);
 
-  const buttonStyles: Record<string, string> = {
-    Amazon: 'bg-[#FF9900] text-black hover:bg-[#FF9900]/90',
-    Flipkart: 'bg-[#2874F0] text-white hover:bg-[#2874F0]/90',
-  };
-
-  const visibleBuyLinks = buyLinks.filter(link => link.visible);
-
-  // Create book product for slider
-  const bookProduct = {
-    id: 'nature-of-the-divine-book',
-    name: 'Nature of the Divine',
-    description: 'The manual for being human. Navigate the metaphysics of the soul and activate unshakeable clarity through the precision of higher logic.',
-    price: 299,
-    imageUrl: 'https://res.cloudinary.com/dj2w2phri/image/upload/v1751279827/1_3_qzfmjp.png',
-    isBook: true as const,
-    stock: stock.paperback,
-  };
+  const chapters = initialChapters.length > 0 ? initialChapters : sampleChapters;
 
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
-      <main className="flex-1">
+    <div className="min-h-screen bg-[#fdfbf7] text-slate-900">
+      {/* HERO SECTION */}
+      <section className="relative pt-16 pb-20 md:pt-24 md:pb-28 overflow-hidden border-b border-slate-200">
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary blur-[120px]" />
+        </div>
 
-        {/* HERO SECTION */}
-        <section className="relative w-full min-h-[100dvh] flex items-center justify-center overflow-hidden pt-20 pb-10 bg-background">
-
-          {/* Animated Background System - Optimized */}
-          <div className="absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
-
-            {/* Aurora Effects - CSS Gradients (Faster than blur filters) */}
-            <div
-              className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[radial-gradient(circle,hsl(var(--primary)/0.15)_0%,transparent_70%)] opacity-60 animate-aurora"
-              style={{ willChange: 'opacity, transform' }}
-            />
-            <div
-              className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] bg-[radial-gradient(circle,hsl(var(--accent)/0.15)_0%,transparent_70%)] opacity-50 animate-aurora"
-              style={{ animationDelay: '2s', willChange: 'opacity, transform' }}
-            />
-
-            {/* Subtle Noise Texture */}
-            <div className="absolute inset-0 bg-noise opacity-[0.02] mix-blend-overlay" />
-          </div>
-
-          <div className="container relative z-10 px-4 md:px-6">
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-
-              {/* Text Content */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-8 order-2 lg:order-1"
-              >
-                {/* Badge */}
-                <motion.div
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border/50 backdrop-blur-md shadow-lg"
-                >
-                  <Sparkles className="w-3 h-3 text-primary" />
-                  <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground">The Science of Transcendence</span>
-                </motion.div>
-
-                {/* Main Title */}
-                <div className="space-y-2">
-                  <h1 className="flex flex-col font-garamond leading-[0.85]">
-                    <span className="text-4xl md:text-5xl font-medium italic text-muted-foreground font-serif tracking-wide">
-                      Nature of the
-                    </span>
-                    <span className="text-7xl md:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary drop-shadow-2xl">
-                      Divine
-                    </span>
-                  </h1>
-                </div>
-
-                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl font-light">
-                  Stop searching. Start aligning. The blueprint for a life of <strong className="text-foreground font-medium">unshakeable clarity</strong> and <strong className="text-foreground font-medium">profound peace</strong> is already within you. Decode the architecture of your soul and wake up to who you really are.
-                </p>
-
-                {/* Buttons */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 w-full sm:w-auto">
-                  {isOutOfStock ? (
-                    <Button
-                      size="lg"
-                      disabled
-                      className="h-14 px-8 rounded-full bg-muted text-muted-foreground font-semibold text-lg cursor-not-allowed w-full sm:w-auto"
-                    >
-                      Out of Stock
-                    </Button>
-                  ) : (
-                    <Button asChild size="lg" className="h-14 px-8 rounded-full bg-gradient-to-r from-primary to-[#C6A55C] hover:brightness-110 text-black font-semibold text-lg shadow-[0_0_20px_rgba(219,192,124,0.3)] hover:shadow-[0_0_30px_rgba(219,192,124,0.5)] transition-all duration-300 w-full sm:w-auto" onClick={() => trackEvent('click_buy_hero')}>
-                      <Link href="/checkout?variant=paperback">
-                        <span className="flex items-center gap-2">
-                          <Feather className="w-5 h-5" /> Buy Signed Copy
-                        </span>
-                      </Link>
-                    </Button>
-                  )}
-
-                  <Button asChild variant="outline" size="lg" className="h-14 px-6 rounded-full border-primary/20 bg-transparent text-foreground hover:bg-primary/10 hover:border-primary/40 text-lg w-full sm:w-auto transition-all" onClick={() => trackEvent('click_read_sample_hero')}>
-                    <Link href="#sample-chapters">
-                      <span className="flex items-center gap-2">
-                        <BookOpen className="w-5 h-5" /> Read Sample
-                      </span>
-                    </Link>
-                  </Button>
-
-                  <Button asChild variant="ghost" size="lg" className="h-14 px-6 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/5 text-lg w-full sm:w-auto transition-all" onClick={() => trackEvent('click_chat_hero')}>
-                    <Link href="/community">
-                      <span className="flex items-center gap-2">
-                        <MessageCircle className="w-5 h-5" /> Chat
-                      </span>
-                    </Link>
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-6 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-700 fill-mode-forwards opacity-0">
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-[0.2em]">
-                    <Truck className="h-3.5 w-3.5" /> 2-7 Days Express Delivery
-                  </div>
-                  <div className="h-4 w-[1px] bg-border/50" />
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Secure Payments
-                  </div>
-                </div>
-
-                {/* Social Proof */}
-                <div className="pt-2">
-                  {analytics?.reviews && (
-                    <StarRating rating={analytics.reviews.averageRating} totalReviews={analytics.reviews.total} />
-                  )}
-                </div>
-              </motion.div>
-
-              {/* Hero 3D Book */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                style={{ y: y2 }} // Combine with scroll parallax
-                className="relative flex justify-center lg:justify-center py-10 lg:py-0 order-1 lg:order-2"
-              >
-                {/* Sacred Geometry / Halo Effect behind book */}
-                <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-white/5 rounded-full -z-10"
-                >
-                  <div className="w-full h-full animate-spin-slow rounded-full">
-                    <div className="absolute inset-[20px] border border-white/5 rounded-full" />
-                    <div className="absolute inset-[100px] border border-dashed border-white/5 rounded-full opacity-50" />
-                  </div>
-                </div>
-
-                <Book3D src="https://res.cloudinary.com/dj2w2phri/image/upload/v1751279827/1_3_qzfmjp.png" />
-
-                {/* Light Flares */}
-                <div
-                  className="absolute top-0 right-10 w-32 h-32 bg-primary/20 blur-[50px] rounded-full -z-10 mix-blend-screen animate-flare"
-                />
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Scroll Indicator */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, y: [0, 10, 0] }}
-            transition={{ delay: 2, duration: 2, repeat: Infinity }}
-            className="absolute bottom-10 left-1/2 -translate-x-1/2 text-gray-500 flex flex-col items-center gap-3"
-          >
-            <span className="text-[10px] uppercase tracking-[0.2em]">Scroll to Explore</span>
-            <div className="w-[1px] h-12 bg-gradient-to-b from-gray-500/0 via-gray-500/50 to-gray-500/0" />
-          </motion.div>
-        </section>
-
-
-        {/* PRODUCTS SLIDER SECTION */}
-        <ProductsSlider products={products} bookProduct={bookProduct} />
-
-
-        {/* SYNOPSIS SECTION */}
-        <section id="synopsis" className="py-24 md:py-32 relative overflow-hidden">
-          <div className="container px-4 md:px-6">
-            <div className="max-w-4xl mx-auto space-y-12">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                className="text-center space-y-4"
-              >
-                <BookText className="w-10 h-10 mx-auto text-primary opacity-80" />
-                <h2 className="text-3xl md:text-5xl font-bold font-garamond text-foreground">A Journey Within</h2>
-                <div className="h-1 w-20 bg-primary/30 mx-auto rounded-full" />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="prose prose-lg md:prose-xl prose-stone dark:prose-invert mx-auto text-muted-foreground leading-loose text-center font-light"
-                dangerouslySetInnerHTML={{ __html: synopsis }}
-              />
-            </div>
-          </div>
-        </section>
-
-
-        {/* CHAPTERS SECTION */}
-        <section id="sample-chapters" className="py-24 md:py-32">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="space-y-4"
-              >
-                <h2 className="text-4xl md:text-6xl font-bold font-garamond">Sample <br /><span className="text-primary">Chapters</span></h2>
-                <p className="text-muted-foreground max-w-md">Read the first two chapters for free. No email required. Just pure <strong className="text-foreground">wisdom</strong>.</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-              >
-                <Button asChild variant="outline" className="group">
-                  <Link href="#buy">
-                    Get Full Access <Lock className="w-4 h-4 ml-2 group-hover:text-primary transition-colors" />
-                  </Link>
-                </Button>
-              </motion.div>
-            </div>
-
-            <div className="grid gap-6 max-w-5xl mx-auto">
-              <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={`item-${initialChapters[0]?.number}`}>
-                {initialChapters.map((chapter, index) => (
-                  <motion.div
-                    key={chapter.number}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <AccordionItem
-                      value={`item-${chapter.number}`}
-                      className="border border-border rounded-xl bg-card overflow-hidden data-[state=open]:ring-1 data-[state=open]:ring-primary/20 shadow-sm transition-all duration-300"
-                    >
-                      <AccordionTrigger
-                        onClick={() => trackEvent('view_sample_chapter', { chapter: chapter.number })}
-                        className="px-6 py-5 hover:bg-secondary/50 transition-colors hover:no-underline group"
-                      >
-                        <div className="flex items-center gap-6">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground font-garamond font-bold text-lg group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
-                            {chapter.number}
-                          </span>
-                          <div className="text-left">
-                            <h3 className={cn("text-xl md:text-2xl font-garamond font-medium transition-colors", chapter.locked ? "text-muted-foreground" : "text-foreground group-hover:text-primary")}>
-                              {chapter.title}
-                            </h3>
-                            {chapter.locked && <span className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1 mt-1"><Lock className="w-3 h-3" /> Premium</span>}
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-6 pb-8 pt-2">
-                        <div className="pl-[4rem]">
-                          {!chapter.locked ? (
-                            <div className="prose prose-lg prose-stone dark:prose-invert max-w-none font-serif leading-relaxed text-muted-foreground">
-                              {chapter.content}
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center py-12 bg-secondary/20 rounded-lg border border-dashed border-border text-center">
-                              <Lock className="w-10 h-10 text-muted-foreground/50 mb-4" />
-                              <h4 className="text-xl font-medium mb-2">This Chapter is Locked</h4>
-                              <p className="text-muted-foreground mb-6 max-w-md">Purchase the full book to unlock all chapters and discover the complete philosophy.</p>
-                              {isOutOfStock ? (
-                                <Button disabled className="cta-button opacity-50 cursor-not-allowed">
-                                  Out of Stock
-                                </Button>
-                              ) : (
-                                <Button asChild className="cta-button" onClick={() => trackEvent('click_buy_signed_sample_chapter')}>
-                                  <Link href="/checkout?variant=paperback">Buy Signed Copy</Link>
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </motion.div>
-                ))}
-              </Accordion>
-            </div>
-          </div>
-        </section>
-
-
-        {/* AUTHOR SECTION */}
-        <section id="author" className="py-24 md:py-32">
-          <div className="container px-4 md:px-6">
-            <div className="container px-4 md:px-6">
-              <div className="max-w-4xl mx-auto items-center">
-                {/* Image Removed as per request */}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="space-y-8 text-center"
-                >
-                  <div>
-                    <div className="inline-block rounded-full bg-secondary px-4 py-1.5 text-sm text-secondary-foreground font-medium mb-4">The Mind Behind</div>
-                    <h2 className="text-4xl md:text-5xl font-bold font-garamond">Alfas B</h2>
-                  </div>
-                  <div
-                    className="prose prose-lg prose-stone dark:prose-invert text-muted-foreground font-light leading-relaxed mx-auto"
-                    dangerouslySetInnerHTML={{ __html: authorBio }}
-                  />
-                  <div className="pt-4">
-                    <Image
-                      src="/signature.png"
-                      width={200}
-                      height={80}
-                      alt="Signature"
-                      className="opacity-80 dark:invert mx-auto"
-                      style={{ display: 'none' }} // Placeholder if signature image exists
-                    />
-                  </div>
-                </motion.div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* LATEST BLOGS SECTION */}
-        {latestBlogs && latestBlogs.length > 0 && (
-          <section className="py-24 md:py-32 bg-muted/30">
-            <div className="container px-4 md:px-6">
-              <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="space-y-4"
-                >
-                  <h2 className="text-4xl md:text-6xl font-bold font-garamond">Wisdom for the <br /><span className="text-primary">Modern Seeker</span></h2>
-                  <p className="text-muted-foreground max-w-md">Practical spirituality, meditation tips, and philosophical inquiries.</p>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <Button asChild variant="outline" className="group">
-                    <Link href="/blogs">
-                      View All Articles <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-                </motion.div>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-8">
-                {latestBlogs.map((post, index) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Link href={`/blogs/${post.slug}`} className="group flex flex-col h-full">
-                      <div className="aspect-[16/9] relative overflow-hidden rounded-2xl mb-6 bg-secondary/30">
-                        <div 
-                          className="w-full h-full bg-cover bg-center transform group-hover:scale-105 transition-transform duration-500"
-                          style={{ backgroundImage: `url(${(post.image && post.image !== 'undefined' && post.image !== 'null') ? post.image : '/images/blog-default.png'})` }}
-                        />
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                      </div>
-                      <div className="space-y-3 flex-1">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                          <Calendar className="w-3 h-3" />
-                          <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                        </div>
-                        <h3 className="text-2xl font-headline font-bold leading-tight group-hover:text-primary transition-colors">
-                          {post.title}
-                        </h3>
-                        <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
-                          {post.excerpt || post.content.replace(/<[^>]+>/g, '').substring(0, 100) + '...'}
-                        </p>
-                      </div>
-                      <div className="pt-4 flex items-center gap-2 text-sm font-semibold text-primary">
-                        Read More <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* TESTIMONIALS */}
-        <DynamicTestimonials />
-
-        {/* NEWSLETTER SECTION */}
-        <section id="newsletter" className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-secondary/20" />
-          <div className="container px-4 md:px-6 relative z-10">
-            <div className="max-w-2xl mx-auto text-center space-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <h2 className="text-3xl md:text-5xl font-bold font-garamond mb-4">Quiet the Noise. Tune into the Signal.</h2>
-                <p className="text-muted-foreground text-lg">
-                  Join 10,000+ seekers receiving weekly transmissions on <strong className="text-foreground font-medium">clarity</strong>, <strong className="text-foreground font-medium">purpose</strong>, and the <strong className="text-foreground font-medium">art of being</strong>. No fluff. Just truth.
-                </p>
-              </motion.div>
-
-              <motion.form
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  trackEvent('newsletter_subscribe', { location: 'home_footer' });
-                  // @ts-ignore
-                  alert("Thank you for subscribing! Your journey to clarity begins.");
-                }}
-              >
-                <input
-                  type="email"
-                  placeholder="Your email address"
-                  required
-                  className="flex-1 h-12 px-4 rounded-full bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                />
-                <Button type="submit" size="lg" className="rounded-full px-8">
-                  Subscribe
-                </Button>
-              </motion.form>
-              <p className="text-xs text-muted-foreground">Unsubscribe at any time.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA / FOOTER HERO */}
-        <section id="buy" className="py-32 relative bg-primary text-primary-foreground overflow-hidden">
-          <div className="absolute inset-0 bg-noise opacity-20 mix-blend-overlay" />
-          <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent" />
-
-          <div className="container px-4 md:px-6 relative z-10 text-center space-y-10">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="relative">
+            {/* Book thumbnail — top-right corner */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="absolute top-0 right-0 w-24 sm:w-32 md:w-40 lg:w-44 xl:w-48 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-slate-200 bg-white"
             >
-              <Sparkles className="w-12 h-12 mx-auto mb-6 text-primary-foreground/80" />
-              <h2 className="text-5xl md:text-7xl font-bold font-garamond tracking-tight">Ready to Transform Your Life?</h2>
-              <p className="text-xl md:text-2xl text-primary-foreground/90 max-w-2xl mx-auto mt-6 font-light">
-                The path to <strong className="font-semibold">clarity</strong> is waiting. Order your signed copy today and align with your true nature.
-              </p>
+              <BookImage
+                src={BOOK.coverImage}
+                alt={BOOK.title}
+                fill
+                className="object-cover"
+                wrapperClassName="h-full w-full"
+              />
             </motion.div>
 
+            {/* Details fill the remaining space */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-wrap justify-center items-center gap-6"
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="relative max-w-4xl text-left pr-28 sm:pr-36 md:pr-44 lg:pr-52 xl:pr-60 pb-6"
             >
-              {visibleBuyLinks.map((link) => (
-                <Button
-                  key={link.name}
-                  asChild
-                  size="lg"
-                  className={cn(buttonStyles[link.name], "h-16 px-10 text-lg rounded-full font-bold shadow-2xl hover:scale-105 transition-all duration-300")}
-                  onClick={() => trackEvent(`click_buy_${link.name.toLowerCase()}_footer`)}
-                >
-                  <a href={link.url} target="_blank" rel="noopener noreferrer">
-                    Buy on {link.name}
-                  </a>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest mb-8">
+                <Sparkles className="h-4 w-4" /> {HOME.hero.badge}
+              </div>
+              <h1 className="text-4xl md:text-6xl font-headline leading-tight mb-6">
+                {HOME.hero.headlineTop} <span className="text-primary italic">{HOME.hero.headlineHighlight}</span>
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed max-w-2xl">
+                {HOME.hero.paragraph}{" "}
+                <span className="font-semibold text-slate-700">{HOME.hero.byline}</span>.
+              </p>
+              <div className="flex flex-wrap items-center justify-start gap-4">
+                <Button size="lg" className="rounded-full px-8 h-14 font-bold text-base shadow-xl shadow-primary/20" asChild>
+                  <Link href="/checkout?variant=paperback">{HOME.hero.buyButton} <ArrowRight className="ml-2 h-5 w-5" /></Link>
                 </Button>
-              ))}
+                <Button size="lg" variant="outline" className="rounded-full px-8 h-14 font-bold text-base bg-white/50 backdrop-blur" asChild>
+                  <Link href="#synopsis">{HOME.hero.exploreButton}</Link>
+                </Button>
+              </div>
+
+              {/* Price */}
+              <div className="mt-8 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+                <span className="text-3xl md:text-4xl font-headline font-bold text-slate-900">₹{BOOK.price}</span>
+                <span className="text-sm text-muted-foreground">{HOME.hero.priceSuffix}</span>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-start gap-x-6 gap-y-2 mt-6 text-sm text-muted-foreground">
+                {HOME.hero.features.map(feature => {
+                  const Icon = FEATURE_ICONS[feature.icon] || Star;
+                  return (
+                    <span key={feature.icon} className="flex items-center gap-2">
+                      {feature.icon === 'star' ? (
+                        <Icon className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      ) : (
+                        <Icon className={feature.icon === 'truck' ? 'h-4 w-4 text-primary' : 'h-4 w-4 text-emerald-500'} />
+                      )}
+                      {feature.label}
+                    </span>
+                  );
+                })}
+              </div>
             </motion.div>
           </div>
-        </section>
+        </div>
+      </section>
 
-      </main>
+      {/* QUOTE BAND */}
+      <section className="bg-slate-900 text-white py-14">
+        <div className="container mx-auto px-4 text-center max-w-3xl">
+          <Quote className="h-10 w-10 text-primary/60 mx-auto mb-6" />
+          <p className="text-2xl md:text-3xl font-garamond italic leading-relaxed">
+            {HOME.quote}
+          </p>
+        </div>
+      </section>
 
+      {/* SYNOPSIS */}
+      <section id="synopsis" className="scroll-mt-24 py-20 md:py-24 border-b border-slate-200 bg-white">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-widest mb-3">
+              <ScrollText className="h-4 w-4" /> {HOME.synopsis.label}
+            </div>
+            <h2 className="text-3xl md:text-5xl font-headline">{HOME.synopsis.heading}</h2>
+          </div>
+          <article
+            className="text-slate-600 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: synopsis }}
+          />
+        </div>
+      </section>
+
+      {/* CHAPTERS */}
+      <section id="chapters" className="scroll-mt-24 py-20 md:py-24 border-b border-slate-200 bg-[#fdfbf7]">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-widest mb-3">
+              <BookOpen className="h-4 w-4" /> {HOME.chapters.label}
+            </div>
+            <h2 className="text-3xl md:text-5xl font-headline mb-4">{HOME.chapters.heading}</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              {HOME.chapters.subtext}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {chapters.map((chapter, index) => (
+              <ChapterCard key={chapter.id || chapter.number} chapter={chapter} index={index} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AUTHOR */}
+      <section id="author" className="scroll-mt-24 py-20 md:py-24 border-b border-slate-200 bg-white">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-widest mb-3">
+              <Feather className="h-4 w-4" /> {HOME.author.label}
+            </div>
+            <h2 className="text-3xl md:text-5xl font-headline">{HOME.author.heading}</h2>
+          </div>
+          <article
+            className="text-slate-600 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: authorBio }}
+          />
+        </div>
+      </section>
+
+      {/* BUY */}
+      <section id="buy" className="scroll-mt-24 bg-slate-900 py-20 md:py-24 text-white overflow-hidden relative">
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
+          <Image
+            src="https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2000&auto=format&fit=crop"
+            alt="Books"
+            fill
+            className="object-cover"
+          />
+        </div>
+        <div className="container mx-auto px-4 text-center relative z-10 max-w-2xl">
+          <BookOpen className="h-12 w-12 text-primary mx-auto mb-6" />
+          <h2 className="text-4xl md:text-5xl font-headline mb-6">{HOME.buy.heading}</h2>
+          <p className="text-slate-400 mb-10 text-lg leading-relaxed">
+            {HOME.buy.subtext}
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+            <Button size="lg" className="rounded-full px-10 h-14 font-bold text-lg shadow-xl shadow-primary/20" asChild>
+              <Link href="/checkout?variant=paperback">{HOME.buy.buyNow} <ArrowRight className="ml-2 h-5 w-5" /></Link>
+            </Button>
+            <Button size="lg" variant="outline" className="rounded-full px-10 h-14 font-bold text-lg bg-transparent border-white/40 text-white hover:bg-white hover:text-black hover:border-white transition-colors" asChild>
+              <Link href="/#chapters">{HOME.buy.sample}</Link>
+            </Button>
+          </div>
+
+          {buyLinks.filter(link => link.visible).length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <span className="text-xs text-slate-400 uppercase tracking-widest mr-2">{HOME.buy.alsoOn}</span>
+              {buyLinks.filter(link => link.visible).map(link => (
+                <Link
+                  key={link.name}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-bold px-5 py-2.5 rounded-full border border-white/20 hover:bg-white/10 hover:border-white/40 transition-all"
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

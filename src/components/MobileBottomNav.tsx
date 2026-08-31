@@ -1,73 +1,68 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, PackageSearch, User, LogIn } from 'lucide-react';
+import { Home, BookOpen, ScrollText, User, ShoppingBag } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { BOTTOM_NAV, NAV } from '@/lib/constants';
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  match: (pathname: string) => boolean;
+}
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  const navLinks = [
-    { href: '/', label: 'Home', icon: Home, public: true },
-    { href: '/orders', label: 'Orders', icon: PackageSearch, public: false },
-    { href: '/login', label: 'Login', icon: LogIn, public: true, hideWhenLoggedIn: true },
-    { href: '/settings', label: 'You', icon: User, public: false },
+  const items: NavItem[] = [
+    { href: '/', label: BOTTOM_NAV.home, icon: Home, match: p => p === '/' },
+    { href: '/#synopsis', label: BOTTOM_NAV.about, icon: BookOpen, match: p => p === '/#synopsis' },
+    { href: '/#chapters', label: BOTTOM_NAV.chapter, icon: ScrollText, match: p => p === '/#chapters' },
+    {
+      href: user ? '/orders' : '/login',
+      label: user ? BOTTOM_NAV.orders : BOTTOM_NAV.login,
+      icon: User,
+      match: p => p.startsWith('/orders') || p.startsWith('/login') || p.startsWith('/signup'),
+    },
   ];
 
-  const visibleLinks = navLinks.filter(link => {
-    if (loading) return false;
-    if (link.public) {
-        if (link.hideWhenLoggedIn && user) return false;
-        return true;
-    }
-    return !!user;
-  });
-
-
-  if (pathname === '/admin' || pathname.startsWith('/login') || pathname.startsWith('/signup') || pathname.startsWith('/checkout')) {
-    return null;
-  }
-  
-  if (loading) {
-    return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-            <div className="mx-auto grid h-full max-w-lg grid-cols-3 animate-pulse">
-                {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex flex-col items-center justify-center">
-                        <div className="h-6 w-6 rounded-md bg-muted"></div>
-                        <div className="mt-1 h-2 w-10 rounded bg-muted"></div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    )
-  }
+  const activeCount = items.filter(item => item.match(pathname)).length;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-      <div className={cn("mx-auto grid h-full max-w-lg font-medium", 
-        `grid-cols-${visibleLinks.length}`
-      )}>
-        {visibleLinks.map((link) => {
-          const isActive = pathname === link.href;
+    <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+      <div className="grid h-16 grid-cols-5">
+        {items.map(item => {
+          const active = item.match(pathname);
+          const Icon = item.icon;
           return (
             <Link
-              key={link.href}
-              href={link.href}
+              key={item.href}
+              href={item.href}
               className={cn(
-                'group inline-flex flex-col items-center justify-center px-5 transition-colors hover:bg-muted',
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                'flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
+                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <link.icon className="mb-1 h-6 w-6" />
-              <span className="text-xs font-medium">{link.label}</span>
+              <Icon className="h-5 w-5" />
+              {item.label}
             </Link>
           );
         })}
+
+        <Link
+          href="/checkout?variant=paperback"
+          className="flex flex-col items-center justify-center gap-1 text-[11px] font-bold text-primary-foreground"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/30">
+            <ShoppingBag className="h-5 w-5" />
+          </span>
+          <span>{BOTTOM_NAV.buyNow}</span>
+        </Link>
       </div>
     </nav>
   );
