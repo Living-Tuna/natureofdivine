@@ -10,7 +10,7 @@ export const SITE = {
   email: 'natureofthedivine@gmail.com',
   phone: '8606281125',
   author: 'Alfas B',
-  tagline: 'A spiritual philosophy book exploring God, consciousness, the soul journey, and the path to inner peace and spiritual awakening.',
+  tagline: 'A spiritual philosophy book that explores the nature of God, the soul journey, the role of religion, and how to align with the divine through meditation and mindful living.',
 };
 
 // ── The book ────────────────────────────────────────────────────────────────
@@ -22,32 +22,34 @@ export const BOOK = {
   currency: 'INR',
   coverImage: 'https://res.cloudinary.com/dj2w2phri/image/upload/v1751279827/1_3_qzfmjp.png',
   description:
-    'Nature of the Divine is a spiritual philosophy book about God, consciousness, the soul journey, and what it truly means to be human — written by Alfas B for the thinking, feeling seeker of inner peace and spiritual awakening.',
+    'Nature of the Divine is a spiritual philosophy book by Alfas B that explores the nature of God, the soul journey, the role of religion as a guiding force, and how to align with the divine through meditation, knowledge, and mindful living.',
   category: 'Spiritual Philosophy',
 };
 
 // ── Synopsis ────────────────────────────────────────────────────────────────
 export const synopsis = `
 <p class="mb-4 py-2 px-4 border-l-2 border-primary/20 italic text-xl md:text-2xl font-garamond leading-relaxed">
-  "The ego is a heavy cloak. To know the Divine, one must learn to become as light as a feather."
+  "The essence of existence is Intelligence."
 </p>
 
-<p class="mb-4">Most of us carry a noisy mind — replaying the past, rehearsing the future, chasing answers that slip away the moment we reach for them. This book was born from a quiet question: <strong>what if peace is not something we must earn, but something that is already here, waiting beneath all that noise?</strong> That single question opens the door to a deeper study of consciousness, the soul journey, and divine intelligence.</p>
+<p class="mb-4">What if the cosmos, life, and the human mind all follow the same divine pattern — from a singularity to infinite complexity? What if the answers you seek about God, your soul, and the meaning of life are already within you, waiting beneath the noise of everyday thoughts? <i>Nature of the Divine</i> begins with these questions and follows them across cosmology, biology, philosophy, and the inner life.</p>
 
-<p class="mb-4"><i class="font-garamond">Nature of the Divine</i> by Alfas B is not a religious book, and it is not an abstract philosophy lecture. It is a gentle, honest exploration of <strong>God, consciousness, and what it really means to be human</strong> — written for people who like to think, and who also long to feel. Whether you practice mindfulness meditation, want to understand the connection between science and spirituality, or are searching for guidance on your spiritual awakening, this book meets you where you are.</p>
+<p class="mb-4"><i class="font-garamond">Nature of the Divine</i> by Alfas B is a spiritual philosophy book that explores the nature of God, the journey of the soul, the role of religion as a guiding force, and how to align with the divine through meditation and mindful living. Written for the thinking seeker who wants to understand religious values and spiritual truth, the book walks through nine interconnected chapters — from the Big Bang to the soul's journey, from the mind as a vessel to the sacred role of society and religion.</p>
 
-<p class="mb-4">Through short reflections, simple meditations, and a practical approach to inner peace, the author walks beside the reader rather than above them. You will learn how stilling the mind can reveal clarity, how aligning with the divine can transform habit, and why the journey of self-realization is so much simpler than most spiritual books make it sound.</p>
+<p class="mb-4">The book does not dismiss religion. It explains why religion emerged as a divine companion for humanity — a guiding force that awakened civilisation and continues to point toward God. Through honest reflections on consciousness, the observer within, the habits of a divine life, and the fundamental force of love, Alfas B offers a grounded path to understanding the divine nature of existence.</p>
 
-<p>If you have been searching for something real — something that stays steady when life gets heavy — this book is an invitation to begin. Turn the page, give yourself a quiet hour, and discover what has been waiting underneath your own thoughts all along.</p>
+<p class="mb-4">Whether you are exploring meditation for the first time, seeking to understand the connection between science and spirituality, or wanting a deeper relationship with God that goes beyond belief into direct experience, this book meets you where you are. It is not abstract philosophy — it is a practical guide to living in the nature of the divine, one still morning, one clear thought, one divine action at a time.</p>
+
+<p>If you have been searching for something real — a spiritual philosophy that honours both reason and faith, both the cosmos and the soul — this book is an invitation to begin. Turn the page, sit in stillness, and discover what has been waiting underneath your own thoughts all along.</p>
 `;
 
 // ── Author bio ───────────────────────────────────────────────────────────────
 export const authorBio = `
-<p class="mb-4"><strong>Alfas B</strong> writes the way he thinks — slowly, carefully, and from the heart. An engineer by training and a student of the inner life by calling, he spent years studying the great spiritual traditions, from eastern meditation and mindfulness to the contemplative wisdom of the west. Along the way he kept asking one honest question: <em>why does spiritual wisdom so often feel far away from everyday living?</em></p>
+<p class="mb-4"><strong>Alfas B</strong> is an engineer by training and a student of the inner life by calling. Over many years he studied the great spiritual traditions — from eastern meditation practices to the contemplative wisdom of the west — and kept asking one honest question: <em>why does spiritual wisdom so often feel far away from everyday living?</em></p>
 
-<p class="mb-4">This book is his answer. No gurus, no jargon, no promises of instant enlightenment — just one person sharing what helped him find steadiness, clarity, and a deeper sense of purpose. Alfas writes in a warm, grounded, non-preachy voice, speaking to the reader as a fellow traveler on the soul journey rather than a teacher standing above them.</p>
+<p class="mb-4">His answer is <i>Nature of the Divine</i>. The book explores the nature of God through cosmology and consciousness, explains how religion emerged as a divine guiding force for humanity, and offers a practical path of meditation and mindful living for anyone who wants to align with the divine. Alfas writes in a warm, grounded voice, speaking to the reader as a fellow traveller on the soul journey rather than a teacher standing above them.</p>
 
-<p>His work is built on the belief that spiritual awakening is not reserved for monks and mystics — it belongs to everyone willing to look inward. Through <i class="font-garamond">Nature of the Divine</i>, he hopes to help you still the noise, understand your own divine nature, and live with a little more peace. He hopes it helps you find a little of the same clarity he found.</p>
+<p>His work is built on the belief that spiritual awakening is not reserved for monks and mystics — it belongs to everyone willing to look inward. Through <i class="font-garamond">Nature of the Divine</i>, he hopes to help you understand the divine nature of existence, deepen your relationship with God, and live with a little more peace, clarity, and purpose.</p>
 `;
 
 // ── Sample / full chapters ──────────────────────────────────────────────────
@@ -56,142 +58,274 @@ export const allChapters = [
   {
     id: 'chapter-1',
     number: 1,
-    title: 'The Prime Mover (God)',
-    slug: 'the-prime-mover-god',
-    tagline: 'A living, breathing understanding of the Divine that you can begin to feel.',
-    content: `Chapter one looks honestly at the question most of us carry quietly: is there really something more? It steps away from old dogmas and worn-out arguments, and introduces a living, breathing understanding of the Divine — one you don't have to believe in, but can actually begin to feel.`,
+    title: 'God',
+    slug: 'god',
+    tagline: 'From the infinite intelligence of God, manifested the cosmos — everything divine in nature.',
+    content: `Chapter one opens with the foundational truth of the book: from the infinite intelligence of God, the cosmos manifested from the void. It explores how the same divine intelligence that created the universe also created life and the human mind — and what that means for our relationship with God.`,
     body: `
-## Is there something more?
+## In the beginning
 
-Most of us have stood at the edge of an ordinary evening and felt, for a moment, that there is more to this world than what the eye can see. This chapter begins there — not with arguments to be won, but with a question to be sat with.
+The book begins where all creation begins — with God. From the infinite void where nothing exists, the Big Bang manifested as the first act of God: a singularity containing all energy, which unfolded into particles, galaxies, stars, and eventually life on Earth.
 
-We explore what the great traditions meant when they spoke of a Prime Mover, and why that idea still matters to a modern, scientifically-minded seeker. The divine, as described here, is not a distant judge but a quiet presence — closer to you than your own thoughts.
+> "In the beginning there was nothing, except him and his infinite intelligence. Then there was everything."
 
-> "You do not need to climb toward the Divine. You need only to stop running from it."
+## Three acts of creation
 
-## A God you can feel
+God's creation unfolds in three divine acts: the cosmos, biological life, and the human mind. Each follows the same sacred pattern — from a singularity to infinite complexity. The human mind, the book argues, is the most complex creation in the known world — God's own child.
 
-The chapter clears away the noise of debate and dogma, and points instead to direct experience. Meditation, stillness, and honest attention are framed not as religious rituals but as practical technologies for meeting what is already within you.
+## God is everywhere
+
+The concept of God is not a myth but a living reality that reflects through an awakened and undistracted mind. God is everywhere — outside and inside your mind. Our subconscious is described as a reincarnation of God, which gave birth to us, the self.
+
+> "Always remember that God is everywhere outside and inside your mind."
+
+## Free will and alignment
+
+God gave humans free will and placed them at the top of intelligence for a divine purpose. A mind that aligns with the nature of the divine witnesses the divinity God has hidden in everything. Everything exists with the divine blessing of God.
 `,
     locked: false,
   },
   {
     id: 'chapter-2',
     number: 2,
-    title: 'The Divine Blueprint (Man)',
-    slug: 'the-divine-blueprint-man',
-    tagline: 'What it truly means to be human, and why the inner world feels so crowded.',
-    content: `Chapter two turns the lens homeward. It asks what it truly means to be human, and why our inner world often feels so crowded. Through a simple, high-consequence habit of stillness, it shows that clarity is not something to chase — but something to uncover, moment by moment, breath by breath.`,
+    title: 'Man',
+    slug: 'man',
+    tagline: 'The mind is a temple. Clear it from all kinds of thoughts, everyday.',
+    content: `Chapter two is the heart of the book. It explains that man is not one entity but a society of soul, body, and mind — and that the only challenge in this lifetime is to preserve the vessel of the mind without chaos. Through meditation, stillness, and the habit of clearing thoughts, one aligns with the nature of the divine.`,
     body: `
-## The crowded inner room
+## God made man in his image
 
-We rarely pause to ask: why is the mind so full? This chapter looks at human nature with honesty and warmth, exploring the ego, conditioning, and the endless inner commentary that keeps us from peace.
+From the infinite intelligence of God, humans manifested from a biological singularity. The divine pattern of creation — from singularity to identity — exists in everything, including the human mind. The soul made a body, and in it manifested an empty vessel: our mind.
 
-Understanding how the inner world is built is the first step toward transforming it. You will see why your thoughts run on repeat, and how that habit shapes everything — your mood, your relationships, and your sense of self.
+> "The mind is a temple. Clear it from all kinds of thoughts, everyday."
 
-> "Clarity is not added to the mind. It is uncovered from beneath the clutter."
+## A society of soul, body, and mind
+
+Man is not one entity, but a society of soul, body, and mind. His identity is determined by the thoughts he fills in the vessel of his mind. The only challenge is to preserve the vessel without chaos — to empty it so the divine spirit of God can shine through.
+
+## Human consciousness as illusion
+
+Human consciousness is described as an illusion crafted by God, the greatest illusionist. To a human, the world feels real and God seems an illusion. But to God, everything He created is an illusion, and He alone is the only true reality. Yet within these illusions, we find meaning, purpose, and joy.
 
 ## The habit of stillness
 
-The chapter closes with a simple, high-consequence practice: a few minutes of true stillness each day. It shows that personal transformation does not require dramatic change — only gentle, consistent attention to what is already here, breath by breath.
+The chapter introduces the sacred daily practice: rise before the sun, meditate in stillness, remove thoughts layer by breath layer, and submit to the soul. As the vessel becomes still and empty, God shines His divine spirit in us and through us.
+
+> "As the vessel that is our mind is still and empty, God will shine his divine spirit in us, through us."
+
+## Living in the nature of the divine
+
+Each day becomes better than yesterday. The night brings deeper sleep, the morning shines brighter, meditations become more focused, and even the loneliest moments become joyful. This is the nature of the divine life.
 `,
     locked: false,
   },
   {
     id: 'chapter-3',
     number: 3,
-    title: 'The Theatre of the Mind',
-    slug: 'the-theatre-of-the-mind',
-    tagline: 'Observing your own thoughts from the seat of awareness.',
-    content: `Chapter three invites you into the theatre of your own mind. Here the seeker learns to sit back and observe thoughts as they rise and fall, rather than being carried away by them — a doorway into mindfulness meditation and real inner peace.`,
+    title: 'Actions',
+    slug: 'actions',
+    tagline: 'Everything beyond cosmos is beyond causality. Everything in the cosmos is causality.',
+    content: `Chapter three explores how actions determine reality. The actions of the soul — from the Big Bang to the birth of consciousness — are divine. When the mind is aligned with the soul, every action becomes divine. A relaxed mind that serves God manifests divine actions for a better future.`,
     body: `
-## Thoughts as passing players
+## The divine origin of action
 
-Imagine your thoughts as actors on a stage. This chapter teaches you to recognize that you are not the thoughts — you are the one watching them. That shift, from being lost in thought to observing thought, is the heart of consciousness expansion.
+Everything in the cosmos began with divine actions — God's actions in the infinite intelligence that manifested the cosmos, life, and the human soul. The same pattern of creation from singularity to identity reflects in every action we take.
 
-We explore practical mindfulness meditation techniques for noticing the space between thoughts, and why that space is where clarity and peace actually live.
+> "Every action the soul makes from the Big Bang to the manifestation of a mind made of thoughts are indeed divine."
 
-> "You are not your thoughts. You are the awareness in which they appear."
+## Soul actions versus thought actions
+
+The mind perceives and interacts for the will of the self. The self that is dual in nature is of good and bad. A mind close to God always remembers and will be on the good side. A mind that serves God shines brighter by spreading divinity.
+
+## Actions determine the next state
+
+Every perception and action shapes reality for the future, similar to how actions determine the next state of matter in the cosmos. From a single action — keeping the mind in a meditated and focused state — one achieves mastery.
+
+## The mastery of divine action
+
+By relaxing the mind, silencing thoughts, and becoming aware of the void within, one invites a single thought to arise naturally — the thought of God. From this stillness, guidance flows, answers emerge, and with them the power to manifest abundance.
+
+> "A mind in void always aligns with the nature of the divine. A mind that is aligned with the nature of the divine becomes divine. A divine mind manifests divine actions."
 `,
     locked: true,
   },
   {
     id: 'chapter-4',
     number: 4,
-    title: 'The Stillness Within',
-    slug: 'the-stillness-within',
-    tagline: 'Discovering the peace that has been there all along.',
-    content: `Chapter four is a homecoming. After learning to observe the mind, the reader now turns toward the stillness beneath it — the quiet, unchanging presence that many traditions call the soul. Here, inner peace stops being a goal and becomes a discovered home.`,
+    title: 'Journey',
+    slug: 'journey',
+    tagline: 'From the infinite intelligence of God, manifested the soul assigned on a journey destined by God.',
+    content: `Chapter four traces the soul's epic journey — from the cosmos to biological life, through reincarnation across time. The soul is eternal, unlike the body and mind, and transcends into the future. Our journey as a self ends with death, while the soul continues.`,
     body: `
-## Beneath the noise, stillness
+## The divine journey
 
-This chapter guides the reader beneath the surface of thinking to the silent ground of being. It reframes meditation for inner peace not as effort, but as return — coming home to what was never lost.
+The divine journey that started before the Big Bang continues through us into the future as something greater than our own existence — as our Soul. Everything in the cosmos moves from order to disorder, exactly as in a simulation that even God won't disrupt.
 
-Through simple reflection, you begin to sense the presence that remains steady when everything else moves.
+> "The soul that is eternal, unlike the body and mind, transcends into the future over evolution."
+
+## The soul's evolution
+
+Every creation contains a soul that finds its way to transcend into the future to be reborn again. The soul evolves from a singularity to an identity, later known as an individual human being, sharing the exact patterns of the birth of a cosmos.
+
+## One soul, many lives
+
+The same spirit lives in everyone — One at the beginning, One till now, and One in the future. Though each person seems unique, the soul within is the same: a piece of the divine living in us all.
+
+> "It is unknown whether the soul is the same as God or just another creation of God. Either way, the soul is the greatest divine being to man."
+
+## The self's role
+
+Our journey as a self ends with death, while the soul transcends to the future in a new body. The self is born as a companion for the soul — to preserve it, to guide it, and to let it shine through a clear mind.
 `,
     locked: true,
   },
   {
     id: 'chapter-5',
     number: 5,
-    title: 'The Soul Journey',
-    slug: 'the-soul-journey',
-    tagline: 'Life as a path of growth, not a problem to be solved.',
-    content: `Chapter five reframes your whole life as a sacred journey. The soul journey is not about escaping the world but moving through it with awareness — turning setbacks into growth and daily life into practice.`,
+    title: 'Knowledge',
+    slug: 'knowledge',
+    tagline: 'All knowledge in all books are from simple laws of the divine.',
+    content: `Chapter five explores how all knowledge — in every book, every science, every art — originates from the simple divine laws of the universe. Knowledge transcends over time through the soul's journey, and a mind aligned with the divine learns everything it needs from nature itself.`,
     body: `
-## Life as a path
+## Knowledge as divine reflection
 
-This chapter re-frames the struggles of ordinary life as essential steps on the soul journey. Where most self-help asks you to fix yourself, this book invites you to discover who you have been all along.
+From the infinite intelligence of God, knowledge manifested as a reflection of the outside world in our mind. The sense of consciousness gives us the ability to perceive information and spread wisdom that helps us transcend knowledge over time.
 
-You will learn how to meet challenges with curiosity rather than resistance, and how every moment becomes material for spiritual growth.
+> "All knowledge in all books are from simple laws of the divine."
+
+## Knowledge transcends through the soul
+
+The soul only transcends what is necessary to the offspring. What defines a self and the world outside will be lost in time, but the knowledge shared about God, the soul, society, planets, and the cosmos will remain.
+
+## The mind as a vessel of knowledge
+
+One of the main functions of the mind is to contain knowledge, which when fed with repetitive training, helps in more advanced perceptions and actions. A mind with God upfront is more powerful than one that isn't.
+
+## Nature as the greatest teacher
+
+One who knows the sacred patterns of existence holds the ability to obtain the rest of knowledge without any books, if the mind is relaxed and aware. By aligning with the nature of the divine, one learns all knowledge from everything and everywhere.
+
+> "Nature is the greatest teacher of all and holds everything the mind needs to know."
 `,
     locked: true,
   },
   {
     id: 'chapter-6',
     number: 6,
-    title: 'Divine Intelligence',
-    slug: 'divine-intelligence',
-    tagline: 'The quiet order that runs through all of life.',
-    content: `Chapter six explores divine intelligence — the quiet, ordered intelligence that runs through nature, the body, and the universe. It dissolves the false war between faith and reason, showing how science and spirituality point to the same truth.`,
+    title: 'Society',
+    slug: 'society',
+    tagline: 'Nothing God made stands on its own. In Divine Unity, all is known.',
+    content: `Chapter six reveals society as a sacred structure — not just a practical arrangement but a divine force that guides humanity. From villages to thoughts to microbes, everything supports each other. A society close to God evolves at its best and for good.`,
     body: `
-## The intelligence in everything
+## Society as a divine structure
 
-From the turning of the seasons to the healing of a wound, an unfathomable intelligence is at work in all things. This chapter looks at that ordering principle and how we can align with it rather than fight it.
+From the infinite intelligence of God, society manifested as an invisible force that guides humanity together into the future. More than a system to control, society is a divine structure made by the soul as part of the divine journey.
 
-Aligning with the divine, the book argues, is not superstition — it is the art of living in harmony with the way things already work.
+> "Nothing God made stands on its own. In Divine Unity, all is known."
+
+## The interconnection of all things
+
+From atoms forming matter to people shaping communities to stars forming galaxies — no existence stands alone. True strength lies in unity, where every part contributes to the harmony of the whole.
+
+## Leading and being led
+
+Both the ones that govern and those being governed should learn all wisdom from their own souls by clearing their minds from thoughts, practising meditation, and observing the nature of the divine.
+
+## A society of God
+
+There will be heaven and no hell for a society of God. For that, God is real and powerful — and will always protect those who seek the divine presence that lies in the absence of thoughts with purity and relaxation.
 `,
     locked: true,
   },
   {
     id: 'chapter-7',
     number: 7,
-    title: 'The Practice of Presence',
-    slug: 'the-practice-of-presence',
-    tagline: 'Bringing meditation off the cushion and into daily life.',
-    content: `Chapter seven carries the wisdom into everyday living. Here the seeker learns how mindful living, attention, and compassion turn an ordinary day into a continuous meditation and a life aligned with the divine.`,
+    title: 'Religion',
+    slug: 'religion',
+    tagline: 'Man\'s reach for the Divine — a mirror of truth, shaped by time.',
+    content: `Chapter seven explains religion as a divine guiding force — not a cage of dogma but a companion that awakens humanity. It traces how religion emerged to free enslaved minds, how scriptures carry divine truth, and how an undistracted mind can understand any religion in its purest form.`,
     body: `
-## Meditation off the cushion
+## Religion as a guiding force
 
-Meditation is not only something you sit down to do — it is a way of meeting every moment. This chapter offers practical guidance for bringing presence into work, relationships, and the small routines that fill a day.
+From the infinite intelligence of God, religion manifested as a guiding force — awakening humanity with their higher self and aligning them with the nature of the divine. This connection gave rise to a harmonious social structure rooted in peace, order, and inner truth.
 
-It shows how the theory of the earlier chapters becomes a lived, integrated path.
+> "Religion as a guiding force — awakening humanity with the divine wisdom."
+
+## The purpose of religion
+
+Religion is not merely belief; it is the divine companion of the soul and self, manifested to walk alongside us on the sacred journey, ensuring that the forces of corruption — the devil who seeks to blind and devour — are cast out and defeated.
+
+## Freedom, not control
+
+The seeds of religion are movements that appeared to free human minds enslaved by those who controlled in the name of God. Religion manifested for freeing man to rebuild a new form of society, offering peace and the presence of the Real God.
+
+## All religions carry truth
+
+An awakened and undistracted mind can and will understand any religion and scripture about God in its purest form. The ability to understand religion resides in mastering the skill of controlling one's own mind from random thoughts through relaxation and awareness.
+
+> "All holy religions are true and the truth lies in proper understanding of its message."
 `,
     locked: true,
   },
   {
     id: 'chapter-8',
     number: 8,
-    title: 'Becoming Light',
-    slug: 'becoming-light',
-    tagline: 'The quiet culmination of the soul journey.',
-    content: `In the final chapter, the journey reaches its natural end: a life lived lightly, from awareness rather than from the ego. Readers discover what it means to become 'as light as a feather' — free, present, and at peace.`,
+    title: 'Love',
+    slug: 'love',
+    tagline: 'Love is Divine, Love must be Divine.',
+    content: `Chapter eight reveals love as the fundamental force of nature — the interconnection between two entities where they coexist. When processed by thoughts, love becomes chained to emotions. But love in the absence of thoughts shines the divine essence of God and becomes divine.`,
     body: `
-## The feather's freedom
+## Love as the fundamental force
 
-The book returns to its opening image: the ego as a heavy cloak, the divine as lightness. By now the reader has the tools to set that cloak down. This chapter is an invitation to live not as a separate, striving self but as aware, aligned presence.
+From the infinite intelligence of God, everything manifested into existence in its divine form. Love is the fundamental force of nature that acts as an interconnection between two entities where they coexist.
 
-It ends where every genuine spiritual teaching ends — with the reader turned back toward their own life, ready to begin.
+> "Love is the fundamental force of nature."
+
+## Divine love versus emotional love
+
+Love is not naturally made of thoughts but is divine. When processed by thoughts, love becomes chained to emotions. But love in the absence of validation by thoughts shines the divine essence of God and becomes divine.
+
+## Two souls aligned
+
+Two souls connect by nature and realise the connection they already share, only when they are aligned with the nature of the divine. The cue for them to be in love is the recognition of divinity in the other.
+
+> "A mind close to God, evolves at its best and for good. A love close to God, evolves at its best and for good."
+
+## Love as a creation of God
+
+Like any other creation, love evolves from a connection between two souls nurturing into its identity. The mind needs to be with God all the time for love to evolve as commanded by nature.
+`,
+    locked: true,
+  },
+  {
+    id: 'chapter-9',
+    number: 9,
+    title: 'Farewell',
+    slug: 'farewell',
+    tagline: 'After the journey, we fade into the void — where we never lived, nor remembered.',
+    content: `The final chapter addresses death not as an end but as an awakening from a dream. The self is an illusion that ceases to exist, while the soul — eternal and divine — returns to the singularity of pure energy. All we are turns into dust and light.`,
+    body: `
+## The self as a dream
+
+The self is an illusion of the soul, body, and mind — a construction of thoughts. Before the self existed, the soul and body journeyed a long way without us, yet for us. The self is the dream of the soul, the mind, the family, the society, the humanity, and above all, the dream of God.
+
+> "The self is illusionary and does not exist during the birth of our soul but exists as a construction of thoughts."
+
+## Death as awakening
+
+Death is inevitable. One must say goodbye to every creation. A man who knows his soul always remembers that death is not a farewell but an awakening from a dream. The self will not know the end of the soul, just as it doesn't know their beginning.
+
+> "A man who knows his soul always remembers that death isn't a farewell but an awakening from a dream."
+
+## Dust and light
+
+All we are will turn into dust and light. The body returns to cosmic dust. The soul joins its home in the singularity of pure energy — without the self, the body, or consciousness. Nothing sacred is lost.
+
+## The "I" beyond the self
+
+There is an "I" beyond the self — not the identity made of thoughts, but the silent presence within. We are the thoughts we possess, yes — but we are also the light that shines through the soul when thought falls away. That light is still us.
+
+> "When the mind is silent, the Divine speaks. And in that silence, our soul whispers who we truly are."
 `,
     locked: true,
   },
@@ -213,11 +347,11 @@ export const buyLinks = [
 // ── Home / landing page ─────────────────────────────────────────────────────
 export const HOME = {
   hero: {
-    badge: 'A gentle spiritual guide for honest seekers',
+    badge: 'A spiritual philosophy book for the thinking seeker',
     headlineTop: 'Nature of',
     headlineHighlight: 'the Divine',
     paragraph:
-      'A spiritual philosophy book about God, consciousness, and the soul journey. Written for the thinking seeker who wants inner peace, clarity, and genuine spiritual awakening — simple, honest, and deeply human, by',
+      'A spiritual philosophy book about God, the soul journey, the role of religion, and how to align with the divine through meditation and mindful living. Written by',
     byline: 'Alfas B',
     buyButton: 'Buy the Book',
     exploreButton: 'Explore the Wisdom',
@@ -229,16 +363,16 @@ export const HOME = {
     ],
   },
   quote:
-    '"The ego is a heavy cloak. To know the Divine, one must learn to become as light as a feather."',
+    '"The essence of existence is Intelligence."',
   synopsis: {
     label: 'A little about this book',
     heading: 'What it is really about',
   },
   chapters: {
     label: 'Have a look inside',
-    heading: 'A few pages to start',
+    heading: 'A journey through nine chapters',
     subtext:
-      'Pick a chapter. Take a deep breath. Explore the full chapter pages for meditation, consciousness, and spiritual awakening insights.',
+      'From the Big Bang to the soul\'s journey, from the mind as a temple to the guiding force of religion — explore the full chapter pages for meditation, consciousness, and divine wisdom.',
   },
   author: {
     label: 'About the author',
@@ -259,22 +393,27 @@ export const HOME_FAQ = [
   {
     question: 'What is Nature of the Divine about?',
     answer:
-      'Nature of the Divine is a spiritual philosophy book by Alfas B that explores God, consciousness, the soul journey, and what it truly means to be human. It is written for people who are spiritual but not necessarily religious, offering meditation practices and reflections for inner peace and spiritual awakening.',
-  },
-  {
-    question: 'Who is Nature of the Divine written for?',
-    answer:
-      'It is written for the thinking, feeling seeker — anyone interested in meditation, mindfulness, consciousness, divine intelligence, and personal transformation. If you have ever searched for meaning beyond dogma and wanted practical inner peace, this book is for you.',
+      'Nature of the Divine is a spiritual philosophy book by Alfas B that explores the nature of God, the soul journey, the role of religion as a guiding force, and how to align with the divine through meditation and mindful living. It explains how the cosmos, life, and the human mind all follow the same divine pattern of creation — from a singularity to infinite complexity.',
   },
   {
     question: 'Is this a religious book?',
     answer:
-      'No. Nature of the Divine is not a religious book. It draws on the universal wisdom of the contemplative traditions and explores the connection between science and spirituality, but it stands outside any single religion and welcomes readers from every background.',
+      'Nature of the Divine is a spiritual philosophy book that engages deeply with religion. It explains religion as a divine guiding force that emerged to awaken humanity, guide civilisation, and point toward God. The book does not dismiss religion — it honours it as a sacred companion on the soul journey, while encouraging readers to understand religion in its purest form through a still and undistracted mind.',
+  },
+  {
+    question: 'Who is Nature of the Divine written for?',
+    answer:
+      'It is written for anyone who wants to understand the divine nature of existence — whether you follow a religion, practise meditation, or are simply curious about God, the soul, and the meaning of life. It speaks to the thinking seeker who wants spiritual truth grounded in both reason and faith.',
   },
   {
     question: 'What will I learn from reading it?',
     answer:
-      'You will learn how to still a noisy mind, observe your thoughts instead of being carried by them, and uncover the inner peace and clarity that are already present beneath the mental chatter. The book offers both understanding and practical meditation for daily life.',
+      'You will learn how the cosmos, life, and the human mind follow the same divine pattern of creation from a singularity. You will understand the soul\'s eternal journey, the role of religion as a guiding force, how meditation aligns the mind with the divine, and how love is the fundamental force connecting all things. The book offers both philosophical understanding and practical guidance for daily life.',
+  },
+  {
+    question: 'How does the book explain God?',
+    answer:
+      'The book describes God as the infinite intelligence from which the cosmos manifested. God is not a distant judge but a living presence that reflects through an awakened and undistracted mind, through nature, through every soul, and through every act of creation. The divine pattern of creation — from singularity to infinite complexity — is the signature of God visible in everything from the Big Bang to the human mind.',
   },
   {
     question: 'How can I buy Nature of the Divine?',
@@ -287,185 +426,181 @@ export const HOME_FAQ = [
 export const BLOG = {
   title: 'Reflections on the Divine',
   tagline:
-    'Thoughts on meditation, consciousness, the soul journey, and the questions most of us carry quietly — written by Alfas B for the thinking seeker.',
+    'Thoughts on God, the soul journey, the guiding force of religion, meditation, and the divine nature of existence — written by Alfas B for the thinking seeker.',
 };
 
 // Evergreen, SEO-focused blog posts (each drives a /blog/[slug] page).
 export const blogPosts = [
   {
-    slug: 'how-to-meditate-for-clarity',
-    title: 'How to Meditate for Clarity: A Gentle 10-Minute Practice',
+    slug: 'how-the-cosmos-life-and-mind-follow-the-same-divine-pattern',
+    title: 'How the Cosmos, Life, and Mind Follow the Same Divine Pattern',
     excerpt:
-      'A simple, honest guide to meditation for inner peace and mental clarity — no jargon, no religion, just a practical practice you can begin today.',
-    coverImage:
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200&auto=format&fit=crop',
-    category: 'Meditation',
-    date: '2026-06-10',
-    readTime: '6 min read',
-    keywords: ['meditation for clarity', 'mindfulness meditation', 'inner peace', 'meditation guide'],
-    body: `
-## Why meditation feels hard at first
-
-If you have tried to meditate and given up, you are in good company. The mind rebels against stillness. But clarity is not something you force — it is something you uncover, gently, moment by moment.
-
-This article offers a simple 10-minute practice for anyone who wants to meditate for mental clarity and inner peace, without any spiritual jargon.
-
-## The 10-minute practice
-
-1. **Sit comfortably** — on a chair or cushion. Let your spine be tall but relaxed.
-2. **Close your eyes** — take three slow breaths, letting your shoulders drop.
-3. **Rest attention on the breath** — feel the cool air entering, the warm air leaving.
-4. **Notice your thoughts** — when the mind wanders (it will), simply begin again. No judgment.
-5. **Return, again and again** — each return is a rep. That is the practice.
-
-## Why it works
-
-You are not trying to empty your mind. You are training awareness to notice when it has drifted — and that noticing is where clarity lives. Over time, the space between your thoughts grows, and peace becomes your default rather than your exception.
-
-## Bring it into daily life
-
-The same skill applies off the cushion. When you feel scattered, return to the breath for sixty seconds. That small act of return is mindfulness meditation in action, and it is the foundation of a spiritual awakening grounded in everyday experience.
-
-*This reflection is drawn from the themes of* Nature of the Divine *by Alfas B — a spiritual philosophy book on consciousness, the soul journey, and inner peace.*
-`,
-  },
-  {
-    slug: 'signs-of-spiritual-growth',
-    title: 'Signs of Spiritual Growth: How to Know You Are Changing',
-    excerpt:
-      'Spiritual awakening rarely arrives as a thunderbolt. Learn the quiet, unmistakable signs of spiritual growth and why the soul journey is measured in peace, not spectacle.',
-    coverImage:
-      'https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1200&auto=format&fit=crop',
-    category: 'Spiritual Awakening',
-    date: '2026-05-22',
-    readTime: '7 min read',
-    keywords: ['signs of spiritual growth', 'spiritual awakening', 'soul journey', 'personal transformation'],
-    body: `
-## Growth speaks softly
-
-We expect spiritual awakening to announce itself loudly — lights, revelations, a changed life overnight. In reality, genuine growth is quieter. It shows up not in what you feel during a meditation session, but in how you meet an ordinary Tuesday.
-
-## Seven quiet signs
-
-- **The mind is a little quieter** — you catch yourself before spiraling into worry.
-- **Old triggers lose their sting** — people and events that once shook you now pass more gently.
-- **You react less, respond more** — there is a pause between a stimulus and your reply.
-- **Solitude feels fuller** — being alone no longer feels like being empty.
-- **Compassion grows naturally** — you see the suffering in others without judgment.
-- **You want less, not more** — inner peace starts to matter more than outer gain.
-- **The present moment feels enough** — you are less anxious about the future, less haunted by the past.
-
-## Progress is not a straight line
-
-Spiritual growth is a spiral, not a line. You will revisit the same lessons at deeper levels. What matters is the overall direction: toward more awareness, more peace, more alignment with the divine.
-
-## Measure peace, not spectacle
-
-If you are wondering whether you are changing, do not ask how dramatic you feel. Ask whether you are more peaceful, more present, and more compassionate than you were a year ago. That is the real metric of the soul journey.
-
-*This reflection expands on themes explored in* Nature of the Divine *by Alfas B — a book about consciousness, divine intelligence, and the path of spiritual awakening.*
-`,
-  },
-  {
-    slug: 'what-does-it-mean-to-know-god',
-    title: 'What Does It Mean to \'Know God\'?',
-    excerpt:
-      'Knowing the divine is not the same as knowing facts about it. Explore the difference between intellectual belief and direct experience — and why transformation always follows the latter.',
-    coverImage:
-      'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=1200&auto=format&fit=crop',
-    category: 'Consciousness',
-    date: '2026-04-15',
-    readTime: '6 min read',
-    keywords: ['knowing god', 'divine consciousness', 'spiritual experience', 'God and consciousness'],
-    body: `
-## Knowing about, versus knowing
-
-There is a difference between knowing about the divine and knowing the divine — the same gap between reading about the ocean and standing in it. Most of us have only ever been handed information. This article is about the other kind of knowing.
-
-## The limits of the mind
-
-The mind thinks in concepts. It can catalogue religions, compare philosophies, and build theories about God. But the divine, as the great traditions all insist, is not an idea to be captured — it is a presence to be encountered.
-
-> "You cannot think your way to the divine. You can only be present enough to meet it."
-
-## Direct experience is the only doorway
-
-This is where meditation, stillness, and honest attention become essential. They are not rituals or superstitions — they are the practical conditions under which direct spiritual experience becomes possible. When the noise of the mind settles, what remains is not nothing. It is presence.
-
-## Why this matters for your life
-
-Knowing about the divine changes your opinions. Knowing the divine changes your life. It alters how you handle stress, how you treat people, and most of all, how you see yourself. That is why the soul journey is not about collecting beliefs — it is about deepening direct experience.
-
-*This essay is a companion to* Nature of the Divine *by Alfas B, a spiritual philosophy book exploring God, consciousness, and being human.*
-`,
-  },
-  {
-    slug: 'science-and-spirituality-connection',
-    title: 'The Science and Spirituality Connection: Two Windows on One Truth',
-    excerpt:
-      'Modern science and ancient spirituality are not enemies — they are two languages describing the same reality. Explore how cosmology, meditation research, and divine intelligence converge.',
+      'From the Big Bang to biological life to the human mind — the same sacred pattern of creation repeats at every scale. Explore the divine pattern at the heart of Nature of the Divine.',
     coverImage:
       'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200&auto=format&fit=crop',
-    category: 'Science & Spirituality',
-    date: '2026-03-03',
+    category: 'Creation & Consciousness',
+    date: '2026-06-10',
     readTime: '8 min read',
-    keywords: ['science and spirituality connection', 'consciousness and the universe', 'divine intelligence', 'mindfulness research'],
+    keywords: ['divine pattern of creation', 'Big Bang consciousness', 'singularity to identity', 'cosmos life mind', 'Nature of the Divine'],
     body: `
-## A false war
+## One pattern, three acts
 
-For too long we have been told to choose: science or spirit. But this is a false choice. The deepest discoveries of physics describe an astonishingly ordered universe, while contemplative traditions have mapped the inner universe with remarkable precision. Both point toward the same truth — that reality is more subtle, and more whole, than our ordinary view suggests.
+At the heart of *Nature of the Divine* lies a bold claim: the same divine pattern of creation — from a singularity to infinite complexity — repeats at every scale. What happened in the cosmos happened in life, and happens again in the human mind.
 
-## What the contemplative traditions knew
+> "From the infinite intelligence of God, manifested the cosmos from the infinite void where nothing exists."
 
-The great meditation traditions described consciousness as the ground of experience thousands of years ago. They insisted that the observer and the observed are not separate, and that a deeper intelligence runs through all things — what Nature of the Divine calls divine intelligence.
+## The three acts of God
 
-## What modern science is discovering
+The book describes three acts of creation:
 
-Research into mindfulness meditation now shows measurable changes in the brain: reduced stress, improved focus, greater emotional balance. Cosmology reveals a universe fine-tuned for life in ways that still surprise physicists. The convergence is striking.
+1. **The cosmos** — from the Big Bang singularity, energy unfolded into particles, stars, galaxies.
+2. **Biological life** — from a single cell, life evolved into millions of species.
+3. **The human mind** — the most complex creation in the known world, God's own child.
 
-## Aligning with the whole
+Each follows the same sacred law: from a monad, from a point of infinite potential, unfolds magnificent complexity.
 
-When science and spirituality are honoured together, they stop being rivals and become allies. You can be both deeply rational and genuinely spiritual. You can interrogate everything and still bow before the mystery. In fact, that combination is the most honest position of all.
+## Why this matters for you
 
-## A quiet harmony
+If the same pattern that created the universe also created your mind, then your mind is not an accident. It is the cosmos, evolved to the point of self-awareness — the pattern of creation, looking back at itself in wonder.
 
-The soul journey does not ask you to abandon your reason. It asks you to expand it — to include what the heart and the stillness reveal, alongside what the laboratory confirms. That wider view is where peace, clarity, and meaning are found.
-
-*This reflection is drawn from themes in* Nature of the Divine *by Alfas B, a spiritual philosophy book on consciousness and divine intelligence.*
+*This reflection is drawn from themes in* Nature of the Divine *by Alfas B — a spiritual philosophy book on God, the soul journey, and the divine nature of existence.*
 `,
   },
   {
-    slug: 'how-to-align-with-the-divine',
-    title: 'How to Align with the Divine: A Practical Guide to Daily Life',
+    slug: 'religion-as-a-divine-guiding-force',
+    title: 'Religion as a Divine Guiding Force: Reclaiming Its True Purpose',
     excerpt:
-      'Alignment is not about perfecting your circumstances — it is about harmonizing your inner state with the quiet intelligence that already runs through all of life.',
+      'Nature of the Divine explains religion not as a cage of dogma but as a divine companion that awakens humanity. Learn how religion emerged to free minds and guide civilisation toward God.',
     coverImage:
-      'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=1200&auto=format&fit=crop',
-    category: 'Mindful Living',
-    date: '2026-02-14',
+      'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop',
+    category: 'Religion & Spirituality',
+    date: '2026-05-22',
     readTime: '7 min read',
-    keywords: ['how to align with the divine', 'daily spiritual habits', 'mindful living', 'inner peace'],
+    keywords: ['religion guiding force', 'divine companion', 'spiritual awakening', 'religion and God', 'Nature of the Divine'],
     body: `
-## What alignment really means
+## Not a cage, but a companion
 
-To align with the divine is not to force your life into a perfect shape. It is to bring your inner state into harmony with the intelligence that already runs through nature, your body, and the whole of life. Alignment is a matter of inner order, not outer control.
+Too often religion has been experienced as rules, guilt, or division. *Nature of the Divine* offers a radically different vision: religion as a divine companion — a guiding force that emerged to awaken humanity and point toward God.
 
-## Four daily spiritual habits
+> "Religion as a guiding force — awakening humanity with the divine wisdom."
 
-1. **Begin with stillness** — take three minutes of silence before you pick up your phone.
-2. **Meet one thing fully** — drink your tea, or walk, or listen, with complete attention.
-3. **Pause before reacting** — breathe once before responding to anything that stirs you.
-4. **End with gratitude** — close the day by naming one quiet thing you are thankful for.
+## How religion emerged
 
-## Why small habits matter
+The book explains that religion originated as movements to free human minds from those who controlled in the name of God. The intellectuals and awakened minds of ancient times started movements to liberate souls trapped by manipulation, offering peace and the presence of the Real God.
 
-Transformation does not arrive in dramatic episodes. It accumulates in the small, repeated choices of an ordinary day. These habits are not chores — they are ways of reminding yourself, again and again, of what you truly are.
+## All religions carry truth
 
-## The peace that follows
+An awakened and undistracted mind can understand any religion in its purest form. The ability to understand religion resides in mastering the skill of controlling one's own mind through meditation and awareness.
 
-When your inner state is aligned, your outer life settles. Problems remain, but they no longer shake you. You discover an inner peace that does not depend on circumstances — the peace that Nature of the Divine describes as already present beneath the noise of the mind.
+> "All holy religions are true and the truth lies in proper understanding of its message."
 
-*This guide expands on themes in* Nature of the Divine *by Alfas B, a spiritual philosophy book about mindfulness, consciousness, and the soul journey.*
+## The first step
+
+The first step in understanding religion is preserving the mind in its clearest form through meditation. When the mind is still and aligned with the divine, the truth of every religion becomes clear.
+
+*This reflection expands on themes in* Nature of the Divine *by Alfas B — a spiritual philosophy book exploring God, religion, and the soul journey.*
+`,
+  },
+  {
+    slug: 'the-mind-is-a-temple-clearing-the-inner-space',
+    title: 'The Mind Is a Temple: Clearing the Inner Space',
+    excerpt:
+      '"The mind is a temple. Clear it from all kinds of thoughts, everyday." One of the most striking passages of Nature of the Divine — and a daily practice to match it.',
+    coverImage:
+      'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=1200&auto=format&fit=crop',
+    category: 'Meditation & Mindfulness',
+    date: '2026-04-15',
+    readTime: '6 min read',
+    keywords: ['mind is a temple', 'empty vessel', 'meditation practice', 'Nature of the Divine', 'clearing the mind'],
+    body: `
+## A sentence that stops you
+
+Early in the *Man* chapter, Alfas B writes:
+
+> **"The mind is a temple. Clear it from all kinds of thoughts, everyday. Always remember that an empty vessel contains the spirit of God while the one lost in his thoughts, won't."**
+
+## Why the vessel matters
+
+The mind is described as an empty vessel in which thoughts are poured, and from which our identity is built. Fill it with noise and nothing new can enter. Empty it, and it becomes available — open to the divine, open to clarity, open to today.
+
+## A daily habit, not a grand gesture
+
+- **Begin with silence** — three slow breaths before you reach for your phone.
+- **Notice the thoughts** that fill the vessel — worries, comparisons, old stories — and let them settle.
+- **Return gently** — each return to the stillness is a small clearing.
+
+The book promises that as the vessel becomes still and empty, God will shine His divine spirit in us and through us.
+
+*This reflection is drawn from* Nature of the Divine *by Alfas B — a spiritual philosophy book on God, the soul journey, and aligning with the divine.*
+`,
+  },
+  {
+    slug: 'what-does-it-mean-to-align-with-the-divine',
+    title: 'What Does It Mean to Align with the Divine?',
+    excerpt:
+      'Aligning with the divine is not abstract philosophy — it is a practical daily rhythm of meditation, stillness, and living in harmony with nature. Explore the divine alignment path.',
+    coverImage:
+      'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=1200&auto=format&fit=crop',
+    category: 'Divine Living',
+    date: '2026-03-03',
+    readTime: '7 min read',
+    keywords: ['align with the divine', 'divine alignment', 'meditation practice', 'mindful living', 'Nature of the Divine'],
+    body: `
+## Alignment is a daily rhythm
+
+To align with the divine is not a one-time event. It is a daily rhythm — a cycle that begins with a peaceful bedtime, continues through a restful sleep, and culminates in a sacred morning meditation before the sun rises.
+
+> "A mind aligned with the nature of the divine becomes divine."
+
+## The sacred cycle
+
+1. **Sunset** — wind down, meditate, let the day's thoughts settle.
+2. **Sleep** — rest deeply, so the soul can shine through.
+3. **Morning** — rise before the sun, meditate in stillness.
+4. **Day** — act from a clear, soul-aligned mind.
+
+## What changes when you align
+
+When your inner state is aligned, your outer life settles. Problems remain, but they no longer shake you. Learning becomes effortless, action flows smoothly, and the mind remains clear, focused, and strong.
+
+> "A mind aligned with the divine receives every blessing with ease."
+
+*This guide expands on themes in* Nature of the Divine *by Alfas B — a spiritual philosophy book about God, the soul journey, and mindful living.*
+`,
+  },
+  {
+    slug: 'love-is-the-fundamental-force-of-nature',
+    title: 'Love Is the Fundamental Force of Nature',
+    excerpt:
+      '"Love is the fundamental force of nature that acts as an interconnection between two entities where they coexist." On love as the fabric of reality, from Nature of the Divine.',
+    coverImage:
+      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1200&auto=format&fit=crop',
+    category: 'Love & Divine Connection',
+    date: '2026-02-14',
+    readTime: '6 min read',
+    keywords: ['love fundamental force', 'divine love', 'two souls connected', 'Nature of the Divine', 'Alfas B'],
+    body: `
+## More than an emotion
+
+We usually think of love as an emotion — a feeling that rises and falls. *Nature of the Divine* makes a far grander claim. Love is not merely a feeling; it is the very structure of existence:
+
+> "Love is the fundamental force of nature that acts as an interconnection between two entities where they coexist."
+
+## Divine love versus emotional love
+
+When processed by thoughts, love becomes chained to emotions — needy, calculating, conditional. But love in the absence of validation by thoughts shines the divine essence of God and becomes divine.
+
+## Two souls aligned
+
+Two souls connect by nature and realise the connection they already share, only when they are aligned with the nature of the divine. The cue for them to be in love is the recognition of divinity in the other.
+
+> "A mind close to God, evolves at its best and for good. A love close to God, evolves at its best and for good."
+
+## To love as nature loves
+
+Side with what is divine in love, and love becomes what it was always meant to be — the fundamental force connecting all things.
+
+*This reflection is drawn from* Nature of the Divine *by Alfas B — a spiritual philosophy book on God, love, and the soul journey.*
 `,
   },
 ];
@@ -496,7 +631,7 @@ export const BOTTOM_NAV = {
 // ── Footer ──────────────────────────────────────────────────────────────────
 export const FOOTER = {
   brand: 'Nature of the Divine',
-  tagline: 'A spiritual philosophy book exploring God, consciousness, the soul journey, and the path to inner peace and spiritual awakening.',
+  tagline: 'A spiritual philosophy book exploring God, the soul journey, the guiding force of religion, and how to align with the divine through meditation and mindful living.',
   legalHeading: 'Legal & Support',
   connect: 'Connect',
   socials: [
@@ -515,37 +650,39 @@ export const META = {
   defaultTitle: 'Nature of the Divine | A Spiritual Philosophy Book by Alfas B',
   titleTemplate: '%s | Nature of the Divine',
   description:
-    'Nature of the Divine is a spiritual philosophy book by Alfas B about God, consciousness, the soul journey, and inner peace. Explore meditation, mindfulness, and spiritual awakening — read the book, journal, or start today.',
+    'Nature of the Divine is a spiritual philosophy book by Alfas B exploring God, the soul journey, the guiding force of religion, meditation, and how to align with the divine through mindful living.',
   keywords: [
     'Nature of the Divine',
     'Nature of the Divine book Alfas B',
     'spiritual philosophy book',
-    'book on consciousness',
-    'spiritual awakening',
+    'God and consciousness',
+    'soul journey',
+    'religion guiding force',
     'meditation for inner peace',
     'mindfulness meditation',
     'divine intelligence',
+    'align with the divine',
+    'divine pattern of creation',
     'cosmic consciousness',
-    'soul journey',
-    'personal transformation',
-    'how to meditate for clarity',
-    'signs of spiritual growth',
-    'science and spirituality connection',
+    'spiritual awakening',
+    'meditation practice',
     'self realization',
     'inner peace',
     'mindful living',
     'meaning of life',
+    'science and spirituality',
+    'love fundamental force',
   ],
   hashTags: '#NatureOfTheDivine #AlfasB',
   ogTitle: 'Nature of the Divine | A Spiritual Philosophy Book by Alfas B',
   ogDescription:
-    'A gentle, honest book about God, consciousness, and being human — written by Alfas B for the thinking, feeling seeker of inner peace and spiritual awakening.',
+    'A spiritual philosophy book exploring God, the soul journey, the guiding force of religion, and how to align with the divine — written by Alfas B for the thinking seeker.',
   ogImage: '/logo.svg',
   siteName: 'Nature of the Divine',
   locale: 'en_US',
   twitterTitle: 'Nature of the Divine — by Alfas B',
   twitterDescription:
-    'A spiritual philosophy book about God, consciousness, the soul journey, and inner peace.',
+    'A spiritual philosophy book about God, the soul journey, the role of religion, and aligning with the divine through meditation and mindful living.',
   twitterImage: '/logo.svg',
 };
 
@@ -555,9 +692,9 @@ export const SCHEMA = {
   publisher: 'Notion Press',
   datePublished: '2025-06-01',
   description:
-    'Nature of the Divine is a spiritual philosophy book by Alfas B exploring God, consciousness, the soul journey, and what it means to be human. A guide to meditation, inner peace, and spiritual awakening — written for people who like to think and long to feel.',
+    'Nature of the Divine is a spiritual philosophy book by Alfas B exploring God, the soul journey, the guiding force of religion, and how to align with the divine through meditation and mindful living.',
   bookGenre: 'Religion & Spirituality',
-  audience: 'Spiritual seekers, meditators, the spiritually curious',
+  audience: 'Spiritual seekers, meditators, those seeking to understand God, religion, and the soul journey',
 };
 
 // ── Legal pages ─────────────────────────────────────────────────────────────
