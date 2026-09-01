@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { placeOrder, validateDiscountCode, getBookingAction } from '@/lib/actions';
+import { placeOrder, validateDiscountCode, getBookingAction, trackEvent } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -174,6 +174,11 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
 
     // Initialize Item from Search Params (single book)
     useEffect(() => {
+        trackEvent('checkout_reached_shipping');
+    }, []);
+
+    // Initialize Item from Search Params (single book)
+    useEffect(() => {
         const variant = (searchParams.get('variant') as BookVariant | null) || 'paperback';
         const ntd = books.find(b => b.id === 'nature-of-the-divine') || books[0];
 
@@ -225,6 +230,7 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
             }
             calculateTotal();
         }
+        trackEvent('checkout_payment_entered');
         dispatch({ type: 'NEXT_STEP' });
     };
 

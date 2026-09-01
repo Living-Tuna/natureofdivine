@@ -11,7 +11,7 @@ import { getDiscount, incrementDiscountUsage } from './discount-store';
 import { addReview as addReviewToStore } from './review-store';
 import { v4 as uuidv4 } from 'uuid';
 import { v2 as cloudinary } from 'cloudinary';
-import { addEvent } from './analytics-store';
+import { addEvent, getFunnel, type ConversionFunnel } from './analytics-store';
 import { SHA256 } from 'crypto-js';
 import { getChapters } from './chapter-store';
 
@@ -408,4 +408,11 @@ export async function trackEvent(type: string, metadata?: Record<string, any>): 
 
 export async function fetchChaptersAction(): Promise<SampleChapter[]> {
   return await getChapters();
+}
+
+export async function fetchFunnel(
+  timeRange: 'today' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' = 'daily',
+  customRange?: { start: number, end: number }
+): Promise<ConversionFunnel> {
+  return await getFunnel(timeRange, customRange);
 }

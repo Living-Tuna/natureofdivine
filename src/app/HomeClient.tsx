@@ -103,7 +103,7 @@ export function HomeClient({ initialChapters }: { initialChapters: SampleChapter
               </p>
               <div className="flex flex-wrap items-center justify-start gap-4">
                 <Button size="lg" className="rounded-full px-8 h-14 font-bold text-base shadow-xl shadow-primary/20" asChild>
-                  <Link href="/checkout?variant=paperback">{HOME.hero.buyButton} <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                  <Link href="/checkout?variant=paperback" onClick={() => trackEvent('click_buy_button')}>{HOME.hero.buyButton} <ArrowRight className="ml-2 h-5 w-5" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="rounded-full px-8 h-14 font-bold text-base bg-white/50 backdrop-blur" asChild>
                   <Link href="#synopsis">{HOME.hero.exploreButton}</Link>
@@ -217,7 +217,7 @@ export function HomeClient({ initialChapters }: { initialChapters: SampleChapter
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Button size="lg" className="rounded-full px-10 h-14 font-bold text-lg shadow-xl shadow-primary/20" asChild>
-              <Link href="/checkout?variant=paperback">{HOME.buy.buyNow} <ArrowRight className="ml-2 h-5 w-5" /></Link>
+              <Link href="/checkout?variant=paperback" onClick={() => trackEvent('click_buy_button')}>{HOME.buy.buyNow} <ArrowRight className="ml-2 h-5 w-5" /></Link>
             </Button>
             <Button size="lg" variant="outline" className="rounded-full px-10 h-14 font-bold text-lg bg-transparent border-white/40 text-white hover:bg-white hover:text-black hover:border-white transition-colors" asChild>
               <Link href="/#chapters">{HOME.buy.sample}</Link>
