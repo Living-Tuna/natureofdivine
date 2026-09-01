@@ -12,6 +12,8 @@ import { addEvent } from './analytics-store';
 
 const allOrdersCollection = collection(db, 'all-orders');
 
+const BOOKING_ID_PREFIX = 'NTD';
+
 const docToOrder = (doc: any): Order => {
   const data = doc.data();
   const createdAtMillis = data.createdAt instanceof Timestamp 
@@ -56,11 +58,7 @@ type NewOrderData = Omit<Order, 'id' | 'status' | 'createdAt' | 'hasReview' | 'p
 
 export async function addOrder(orderData: NewOrderData): Promise<Order> {
     const { userId } = orderData;
-    if (!userId) {
-        const err = new Error("User ID is required to add an order.");
-        await addLog('error', 'addOrder failed: Missing userId', { error: err });
-        throw err;
-    }
+    const hasUser = Boolean(userId);
 
     try {
         const batch = writeBatch(db);
@@ -68,8 +66,6 @@ export async function addOrder(orderData: NewOrderData): Promise<Order> {
         // Use the auto-generated ID for both documents.
         const newOrderRef = doc(allOrdersCollection);
         const newOrderId = newOrderRef.id;
-
-        const userOrderRef = doc(db, 'users', userId, 'orders', newOrderId);
 
         const newOrderDocumentData: Omit<Order, 'createdAt'> & { createdAt: Timestamp } = {
             id: newOrderId,
@@ -97,11 +93,16 @@ export async function addOrder(orderData: NewOrderData): Promise<Order> {
         };
 
         batch.set(newOrderRef, newOrderDocumentData);
-        batch.set(userOrderRef, newOrderDocumentData);
+
+        // Only mirror into the users subcollection when a userId exists.
+        if (hasUser && userId) {
+            const userOrderRef = doc(db, 'users', userId, 'orders', newOrderId);
+            batch.set(userOrderRef, newOrderDocumentData);
+        }
 
         await batch.commit();
         
-        await addLog('info', 'addOrder created pending order', { orderId: newOrderId, userId: userId });
+        await addLog('info', 'addOrder created pending order', { orderId: newOrderId, userId: userId || null });
 
         const finalOrder: Order = {
             ...newOrderDocumentData,
@@ -183,9 +184,30 @@ export async function getOrderByTransactionId(transactionId: string): Promise<Or
     }
 }
 
+export async function getOrderByBookingId(bookingId: string): Promise<Order | null> {
+    const id = normalizeBookingId(bookingId);
+    if (!id) return null;
+    try {
+        const docRef = doc(allOrdersCollection, id);
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? docToOrder(docSnap) : null;
+    } catch (e) {
+        await addLog('error', 'getOrderByBookingId failed', { bookingId, error: { message: (e as Error).message } });
+        return null;
+    }
+}
+
+function normalizeBookingId(bookingId: string): string {
+    let id = (bookingId || '').trim();
+    if (!id) return '';
+    // Strip a leading human-friendly prefix (case-insensitive) if present.
+    id = id.replace(new RegExp(`^${BOOKING_ID_PREFIX}[\\s-]*`, 'i'), '');
+    return id.trim();
+}
+
 export async function updateOrderStatus(userId: string, orderId: string, status: OrderStatus, hasReview?: boolean): Promise<void> {
-    if (!userId || !orderId) {
-        throw new Error("User ID and Order ID are required to update status.");
+    if (!orderId) {
+        throw new Error("Order ID is required to update status.");
     }
     try {
         const batch = writeBatch(db);
@@ -195,17 +217,19 @@ export async function updateOrderStatus(userId: string, orderId: string, status:
             updateData.hasReview = hasReview;
         }
 
-        const userOrderRef = doc(db, 'users', userId, 'orders', orderId);
-        batch.update(userOrderRef, updateData);
+        if (userId) {
+            const userOrderRef = doc(db, 'users', userId, 'orders', orderId);
+            batch.update(userOrderRef, updateData);
+        }
 
         const allOrdersRef = doc(allOrdersCollection, orderId);
         batch.update(allOrdersRef, updateData);
 
         await batch.commit();
-        await addLog('info', 'updateOrderStatus success', { userId, orderId, status });
+        await addLog('info', 'updateOrderStatus success', { userId: userId || null, orderId, status });
 
     } catch (error) {
-        await addLog('error', 'updateOrderStatus failed', { userId, orderId, status, error: { message: (error as Error).message } });
+        await addLog('error', 'updateOrderStatus failed', { userId: userId || null, orderId, status, error: { message: (error as Error).message } });
         console.error(`Error updating status for order ${orderId}:`, error);
         throw new Error("Could not update the order status.");
     }
@@ -234,12 +258,9 @@ export async function updateOrderPaymentStatus(orderId: string, paymentStatus: '
         const userId = order.userId;
 
         if (!userId) {
-            await addLog('error', 'updateOrderPaymentStatus failed: User ID missing from order', { orderId });
-            return;
+            await addLog('warn', 'updateOrderPaymentStatus: no userId on order; skipping user subcollection', { orderId });
         }
 
-        const userOrderRef = doc(db, 'users', userId, 'orders', orderId);
-        
         let newStatus: OrderStatus = order.status;
         
         if (paymentStatus === 'SUCCESS') {
@@ -267,7 +288,10 @@ export async function updateOrderPaymentStatus(orderId: string, paymentStatus: '
 
         const batch = writeBatch(db);
         batch.update(allOrdersRef, updateData as any);
-        batch.update(userOrderRef, updateData as any);
+        if (userId) {
+            const userOrderRef = doc(db, 'users', userId, 'orders', orderId);
+            batch.update(userOrderRef, updateData as any);
+        }
         await batch.commit();
 
         await addLog('info', 'Order payment status updated successfully', { orderId, newStatus });
@@ -280,31 +304,33 @@ export async function updateOrderPaymentStatus(orderId: string, paymentStatus: '
 }
 
 export async function updateOrderShippingDetails(userId: string, orderId: string, shippingDetails: any): Promise<void> {
-    if (!userId || !orderId) {
-        throw new Error("User ID and Order ID are required to update shipping details.");
+    if (!orderId) {
+        throw new Error("Order ID is required to update shipping details.");
     }
     try {
         const batch = writeBatch(db);
         const updateData = { shippingDetails };
         
-        const userOrderRef = doc(db, 'users', userId, 'orders', orderId);
-        batch.update(userOrderRef, updateData);
+        if (userId) {
+            const userOrderRef = doc(db, 'users', userId, 'orders', orderId);
+            batch.update(userOrderRef, updateData);
+        }
 
         const allOrdersRef = doc(allOrdersCollection, orderId);
         batch.update(allOrdersRef, updateData);
 
         await batch.commit();
-        await addLog('info', 'updateOrderShippingDetails success', { userId, orderId });
+        await addLog('info', 'updateOrderShippingDetails success', { userId: userId || null, orderId });
 
     } catch (error) {
-        await addLog('error', 'updateOrderShippingDetails failed', { userId, orderId, error: { message: (error as Error).message } });
+        await addLog('error', 'updateOrderShippingDetails failed', { userId: userId || null, orderId, error: { message: (error as Error).message } });
         console.error(`Error updating shipping details for order ${orderId}:`, error);
         throw new Error("Could not update the order shipping details.");
     }
 }
 
 export async function updateComboItemStatus(userId: string, orderId: string, itemIndex: number, subItemIndex: number, status: string): Promise<void> {
-    if (!userId || !orderId) throw new Error("Missing IDs");
+    if (!orderId) throw new Error("Missing IDs");
     
     try {
         const orderSnap = await getDoc(doc(allOrdersCollection, orderId));
@@ -322,7 +348,9 @@ export async function updateComboItemStatus(userId: string, orderId: string, ite
         const updateData = { items: updatedItems };
         
         batch.update(doc(allOrdersCollection, orderId), updateData);
-        batch.update(doc(db, 'users', userId, 'orders', orderId), updateData);
+        if (userId) {
+            batch.update(doc(db, 'users', userId, 'orders', orderId), updateData);
+        }
         
         await batch.commit();
         await addLog('info', 'updateComboItemStatus success', { orderId, itemIndex, subItemIndex, status });

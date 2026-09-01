@@ -1,30 +1,73 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings, BookHeart } from 'lucide-react';
+import { Search, Ticket } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { NAV } from '@/lib/constants';
-import { useAuth } from '@/hooks/useAuth';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { useEffect, useState } from 'react';
 
 const navLinks = NAV.links;
 
+function TrackBookingField({ compact = false, onDone }: { compact?: boolean; onDone?: () => void }) {
+  const router = useRouter();
+  const [value, setValue] = useState('');
+  const [error, setError] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const id = value.trim();
+    if (!id) {
+      setError(true);
+      return;
+    }
+    setError(false);
+    onDone?.();
+    router.push(`/ticket/${id}`);
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={cn(
+        'flex items-center gap-1',
+        compact && 'w-full'
+      )}
+    >
+      <div className="relative">
+        <Search className={cn('absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground', compact ? 'h-3.5 w-3.5' : 'h-4 w-4')} />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError(false);
+          }}
+          placeholder="Enter Booking ID"
+          aria-label="Track your booking"
+          className={cn(
+            'rounded-full border bg-background/70 text-sm outline-none transition-colors placeholder:text-muted-foreground/70',
+            error ? 'border-destructive focus:border-destructive' : 'border-border focus:border-primary',
+            compact ? 'h-9 w-full pl-8 pr-8' : 'h-9 w-44 pl-8 pr-2'
+          )}
+        />
+      </div>
+      <Button
+        type="submit"
+        size="sm"
+        variant={compact ? 'default' : 'ghost'}
+        className={cn('shrink-0 gap-1 rounded-full', !compact && 'hover:bg-primary/10 hover:text-primary')}
+      >
+        Track
+      </Button>
+    </form>
+  );
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -34,16 +77,6 @@ export function SiteHeader() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/');
-  };
-
-  const getInitials = (name?: string | null) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  };
 
   return (
     <header
@@ -80,55 +113,30 @@ export function SiteHeader() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/track"
+              className={cn(
+                'transition-all hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full flex items-center gap-1.5',
+                pathname === '/track' ? 'text-primary after:w-full' : 'text-foreground/70'
+              )}
+            >
+              <Ticket className="h-4 w-4" /> Track Booking
+            </Link>
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
-          {authLoading ? (
-            <div className="h-9 w-24 animate-pulse rounded-md bg-muted/50" />
-          ) : user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full ring-2 ring-transparent hover:ring-primary/20 transition-all">
-                  <Avatar className="h-9 w-9 border border-border">
-                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                    <AvatarFallback className="bg-primary/10 text-primary">{getInitials(user.displayName)}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl shadow-xl border-border/50 bg-background/95 backdrop-blur-sm">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.displayName || 'Reader'}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="cursor-pointer rounded-lg focus:bg-primary/10 focus:text-primary">
-                  <Link href="/orders"><BookHeart className="mr-2 h-4 w-4" /> {NAV.myOrders}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="cursor-pointer rounded-lg focus:bg-primary/10 focus:text-primary">
-                  <Link href="/settings"><Settings className="mr-2 h-4 w-4" /> {NAV.settings}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  {NAV.logout}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" asChild className="hover:bg-primary/5 hover:text-primary">
-                <Link href="/login">{NAV.login}</Link>
-              </Button>
-              <Button asChild className="cta-button h-9 px-6 text-sm">
-                <Link href="/checkout?variant=paperback">{NAV.buyNow}</Link>
-              </Button>
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          {/* Track Booking field (desktop) */}
+          <div className="hidden lg:block">
+            <TrackBookingField />
+          </div>
+          <Button asChild className="cta-button h-9 px-6 text-sm hidden md:inline-flex">
+            <Link href="/checkout?variant=paperback">{NAV.buyNow}</Link>
+          </Button>
         </div>
       </div>
     </header>
   );
 }
+
+export { TrackBookingField };
