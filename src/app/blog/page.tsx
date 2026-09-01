@@ -6,6 +6,8 @@ import { blogPosts, BLOG } from "@/lib/data";
 import { SITE } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BlogSidebar } from "@/components/BlogSidebar";
+import { BuyBookSection } from "@/components/BuyBookSection";
 
 export const metadata: Metadata = {
   title: "Blog & Reflections | Nature of the Divine",
@@ -39,59 +41,72 @@ export default function BlogPage() {
         </div>
       </section>
 
-      {/* Featured post */}
+      {/* Blog posts + sidebar */}
       <section className="py-14 md:py-20">
-        <div className="container mx-auto px-4 max-w-3xl space-y-8">
-          {blogPosts.map((post) => (
-            <article
-              key={post.slug}
-              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              <Link href={`/blog/${post.slug}`} className="block">
-                <div className="relative aspect-[16/9] w-full overflow-hidden">
-                  <Image
-                    src={post.coverImage}
-                    alt={post.title}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-              </Link>
-              <div className="p-6 md:p-7">
-                <div className="flex flex-wrap items-center gap-3 mb-3 text-xs text-muted-foreground">
-                  <Badge variant="secondary" className="uppercase tracking-wider text-[10px]">
-                    {post.category}
-                  </Badge>
-                  <span>{post.date}</span>
-                  <span>·</span>
-                  <span>{post.readTime}</span>
-                </div>
-                <h2 className="text-2xl font-headline mb-3">
-                  <Link href={`/blog/${post.slug}`} className="hover:text-primary transition-colors">
-                    {post.title}
-                  </Link>
-                </h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">{post.excerpt}</p>
-                <Link
-                  href={`/blog/${post.slug}`}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
-                >
-                  Read article <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+        <div className="container mx-auto px-4 max-w-6xl flex flex-col lg:flex-row gap-10">
+          <div className="flex-1 min-w-0 space-y-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-2xl font-headline">All reflections</h2>
+              <span className="text-sm text-muted-foreground">{blogPosts.length} articles</span>
+            </div>
+            {blogPosts.map((post) => (
+              <article
+                key={post.slug}
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              >
+                <Link href={`/blog/${post.slug}`} className="block">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden">
+                    <Image
+                      src={post.coverImage}
+                      alt={post.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
                 </Link>
-              </div>
-            </article>
-          ))}
+                <div className="p-6 md:p-7">
+                  <div className="flex flex-wrap items-center gap-3 mb-3 text-xs text-muted-foreground">
+                    <Badge variant="secondary" className="uppercase tracking-wider text-[10px]">
+                      {post.category}
+                    </Badge>
+                    <span>{post.date}</span>
+                    <span>·</span>
+                    <span>{post.readTime}</span>
+                  </div>
+                  <h2 className="text-2xl font-headline mb-3">
+                    <Link href={`/blog/${post.slug}`} className="hover:text-primary transition-colors">
+                      {post.title}
+                    </Link>
+                  </h2>
+                  <p className="text-muted-foreground leading-relaxed mb-4">{post.excerpt}</p>
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
+                  >
+                    Read article <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+              </article>
+            ))}
 
-          {/* Newsletter CTA */}
-          <div className="bg-slate-900 text-white rounded-2xl p-8 md:p-12 text-center">
-            <h2 className="text-2xl md:text-3xl font-headline mb-4">Reflections, delivered gently</h2>
-            <p className="text-slate-400 mb-8 max-w-xl mx-auto text-sm leading-relaxed">
-              Join the circle of quiet seekers. No noise — just honest reflections on meditation, consciousness, and the soul journey, written by {SITE.author}.
-            </p>
-            <Button size="lg" className="rounded-full px-10 h-14 font-bold text-lg shadow-xl shadow-primary/20" asChild>
-              <Link href="/checkout?variant=paperback">Begin with the Book <ArrowRight className="ml-2 h-5 w-5" /></Link>
-            </Button>
+            {/* Newsletter CTA */}
+            <div className="bg-slate-900 text-white rounded-2xl p-8 md:p-12 text-center">
+              <h2 className="text-2xl md:text-3xl font-headline mb-4">Reflections, delivered gently</h2>
+              <p className="text-slate-400 mb-8 max-w-xl mx-auto text-sm leading-relaxed">
+                Join the circle of quiet seekers. No noise — just honest reflections on meditation, consciousness, and the soul journey, written by {SITE.author}.
+              </p>
+              <Button size="lg" className="rounded-full px-10 h-14 font-bold text-lg shadow-xl shadow-primary/20" asChild>
+                <Link href="/checkout?variant=paperback">Begin with the Book <ArrowRight className="ml-2 h-5 w-5" /></Link>
+              </Button>
+            </div>
+
+            {/* Buy the book (mobile fallback) */}
+            <div className="lg:hidden">
+              <BuyBookSection />
+            </div>
           </div>
+
+          <BlogSidebar />
         </div>
       </section>
     </div>

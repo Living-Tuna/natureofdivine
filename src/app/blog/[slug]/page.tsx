@@ -8,6 +8,9 @@ import { BOOK, SITE, SCHEMA } from "@/lib/constants";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BlogSidebar } from "@/components/BlogSidebar";
+import { BuyBookSection } from "@/components/BuyBookSection";
+import { TrackBlogView } from "@/components/TrackBlogView";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -65,6 +68,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <div className="bg-[#fdfbf7] text-slate-900">
+      <TrackBlogView slug={slug} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
@@ -97,47 +101,56 @@ export default async function BlogPostPage({ params }: Props) {
 
       {/* Body */}
       <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4 max-w-2xl">
-          <div className="prose prose-slate max-w-none">
-            <MarkdownRenderer content={post.body} />
-          </div>
+        <div className="container mx-auto px-4 max-w-6xl flex flex-col lg:flex-row gap-10">
+          <div className="flex-1 min-w-0 max-w-2xl mx-auto lg:mx-0 w-full">
+            <div className="prose prose-slate max-w-none">
+              <MarkdownRenderer content={post.body} />
+            </div>
 
-          {/* CTA */}
-          <div className="mt-14 bg-slate-900 text-white rounded-2xl p-8 md:p-10">
-            <Feather className="h-8 w-8 text-primary mb-4" />
-            <h2 className="text-2xl font-headline mb-3">Deeper than an article</h2>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              Every reflection here grows from the same soil as {SITE.author}&apos;s book. In {BOOK.title}, these themes unfold into a complete, practical path to inner peace and spiritual awakening.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button size="lg" className="rounded-full font-bold" asChild>
-                <Link href="/checkout?variant=paperback">Buy the Book <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-              <Button size="lg" variant="outline" className="rounded-full font-bold bg-transparent border-white/40 text-white hover:bg-white hover:text-black" asChild>
-                <Link href="/chapters">Explore the Chapters</Link>
-              </Button>
+            {/* CTA */}
+            <div className="mt-14 bg-slate-900 text-white rounded-2xl p-8 md:p-10">
+              <Feather className="h-8 w-8 text-primary mb-4" />
+              <h2 className="text-2xl font-headline mb-3">Deeper than an article</h2>
+              <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                Every reflection here grows from the same soil as {SITE.author}&apos;s book. In {BOOK.title}, these themes unfold into a complete, practical path to inner peace and spiritual awakening.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button size="lg" className="rounded-full font-bold" asChild>
+                  <Link href="/checkout?variant=paperback">Buy the Book <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+                <Button size="lg" variant="outline" className="rounded-full font-bold bg-transparent border-white/40 text-white hover:bg-white hover:text-black" asChild>
+                  <Link href="/chapters">Explore the Chapters</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Related chapters */}
+            <div className="mt-12">
+              <h2 className="text-xl font-headline mb-4">Related chapters from the book</h2>
+              <div className="space-y-3">
+                {relatedChapters.map((chapter) => (
+                  <Link
+                    key={chapter.id}
+                    href={`/chapters/${chapter.id}`}
+                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-all"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-headline font-bold text-sm shrink-0">
+                      {chapter.number}
+                    </div>
+                    <span className="font-headline group-hover:text-primary transition-colors">{chapter.title}</span>
+                    <ArrowRight className="ml-auto h-4 w-4 text-primary" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Buy the book (mobile fallback) */}
+            <div className="mt-12 lg:hidden">
+              <BuyBookSection />
             </div>
           </div>
 
-          {/* Related chapters */}
-          <div className="mt-12">
-            <h2 className="text-xl font-headline mb-4">Related chapters from the book</h2>
-            <div className="space-y-3">
-              {relatedChapters.map((chapter) => (
-                <Link
-                  key={chapter.id}
-                  href={`/chapters/${chapter.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-all"
-                >
-                  <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-headline font-bold text-sm shrink-0">
-                    {chapter.number}
-                  </div>
-                  <span className="font-headline group-hover:text-primary transition-colors">{chapter.title}</span>
-                  <ArrowRight className="ml-auto h-4 w-4 text-primary" />
-                </Link>
-              ))}
-            </div>
-          </div>
+          <BlogSidebar currentSlug={slug} />
         </div>
       </section>
     </div>
