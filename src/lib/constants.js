@@ -121,10 +121,7 @@ export const NAV = {
     { label: 'About', href: '/#synopsis' },
     { label: 'Chapters', href: '/#chapters' },
   ],
-  login: 'Log in',
-  logout: 'Logout',
-  myOrders: 'My Orders',
-  settings: 'Settings',
+  trackBooking: 'Track Booking',
   buyNow: 'Buy Now',
 };
 
@@ -133,8 +130,7 @@ export const BOTTOM_NAV = {
   home: 'Home',
   about: 'About',
   chapter: 'Chapter',
-  orders: 'Orders',
-  login: 'Log in',
+  track: 'Track',
   buyNow: 'Buy Now',
 };
 

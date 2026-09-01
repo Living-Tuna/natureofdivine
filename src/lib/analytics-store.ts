@@ -12,6 +12,129 @@ import { getOrders } from './order-store';
 const eventsCollection = collection(db, 'analyticsEvents');
 const summaryDocRef = doc(db, 'analytics', 'summary');
 
+export type FunnelStage = {
+    key: string;
+    label: string;
+    value: number;
+};
+
+export type ConversionFunnel = {
+    stages: FunnelStage[];
+    overallConversion: number;
+    drops: { from: number; to: number; percent: number }[];
+    totalVisitors: number;
+    totalSales: number;
+    totalOrders: number;
+};
+
+export async function getFunnel(
+    timeRange: 'today' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' = 'daily',
+    customRange?: { start: number, end: number }
+): Promise<ConversionFunnel> {
+    try {
+        const now = new Date();
+        let startDate = new Date();
+        let endDate = new Date();
+
+        switch (timeRange) {
+            case 'today':
+                startDate.setHours(0, 0, 0, 0);
+                break;
+            case 'daily':
+                startDate.setDate(now.getDate() - 30);
+                break;
+            case 'weekly':
+                startDate.setDate(now.getDate() - 84);
+                break;
+            case 'monthly':
+            case 'yearly':
+                startDate.setFullYear(now.getFullYear() - 1);
+                break;
+            case 'custom':
+                if (customRange) {
+                    startDate = new Date(customRange.start);
+                    endDate = new Date(customRange.end);
+                    if (endDate.getHours() === 0) endDate.setHours(23, 59, 59, 999);
+                }
+                break;
+        }
+
+        const startTimestamp = startDate.getTime();
+        const endTimestamp = endDate.getTime();
+
+        const eventsSnapshot = await getDocs(query(eventsCollection, orderBy('timestamp', 'asc')));
+        const events = eventsSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as AnalyticsEvent))
+            .filter(e => e.timestamp >= startTimestamp && e.timestamp <= endTimestamp);
+
+        const allOrders = await getOrders();
+        const orders = allOrders.filter(o => o.createdAt >= startTimestamp && o.createdAt <= endTimestamp);
+
+        // Awareness: unique visitors via sessionId across page_view events.
+        const uniqueVisitors = new Set<string>();
+        let buttonPages = 0;
+        let shippingVisits = 0;
+        let paymentEnters = 0;
+        let paymentSuccess = 0;
+        let totalSales = 0;
+        let totalOrders = 0;
+
+        for (const event of events) {
+            if (event.type.startsWith('page_view_') && event.metadata?.sessionId) {
+                uniqueVisitors.add(event.metadata.sessionId);
+            }
+            if (event.type === 'click_buy_button' || event.type === 'click_buy_now' || event.type === 'click_buy') {
+                buttonPages++;
+            }
+            if (event.type === 'checkout_reached_shipping') {
+                shippingVisits++;
+            }
+            if (event.type === 'checkout_payment_entered') {
+                paymentEnters++;
+            }
+            if (event.type === 'order_placed_cod' || event.type === 'order_placed_prepaid_success') {
+                paymentSuccess++;
+            }
+        }
+
+        for (const order of orders) {
+            if (order.status === 'cancelled' || order.status === 'pending') continue;
+            totalOrders++;
+            totalSales += order.price;
+        }
+
+        const reuse = Math.max(paymentSuccess, totalOrders);
+        const awareness = uniqueVisitors.size;
+        const stages: FunnelStage[] = [
+            { key: 'awareness', label: 'Awareness', value: awareness },
+            { key: 'buttonPages', label: 'Button Pages', value: buttonPages },
+            { key: 'shippingVisit', label: 'Shipping Page Visit', value: shippingVisits },
+            { key: 'paymentEnter', label: 'Payment Page Enters', value: paymentEnters },
+            { key: 'paymentSuccess', label: 'Payment Success', value: reuse },
+        ];
+
+        const drops = [];
+        for (let i = 1; i < stages.length; i++) {
+            const from = stages[i - 1].value;
+            const to = stages[i].value;
+            const percent = from > 0 ? Math.round((to / from) * 100) : 0;
+            drops.push({ from, to, percent });
+        }
+
+        return {
+            stages,
+            overallConversion: awareness > 0 ? Math.round((reuse / awareness) * 100) : 0,
+            drops,
+            totalVisitors: awareness,
+            totalSales,
+            totalOrders,
+        };
+    } catch (error: any) {
+        addLog('error', 'Failed to get funnel analytics', { message: error.message });
+        throw new Error('Could not fetch funnel analytics data.');
+    }
+}
+
 export async function addEvent(type: string, metadata?: Record<string, any>): Promise<void> {
     try {
         const event: Omit<AnalyticsEvent, 'id'> = {

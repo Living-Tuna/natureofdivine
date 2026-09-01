@@ -3,148 +3,275 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Package, Truck, Calendar, MapPin, Hash, User } from 'lucide-react';
-import { Order } from '@/lib/definitions';
+import {
+  Download,
+  CalendarDays,
+  Truck,
+  MapPin,
+  Hash,
+  CreditCard,
+  Globe,
+  CheckCircle2,
+  Clock,
+  Package,
+  XCircle,
+} from 'lucide-react';
+import { Order, OrderStatus } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
+import { BOOK, SITE } from '@/lib/constants';
+import Image from 'next/image';
+
+const statusInfo: Record<OrderStatus, { label: string; Icon: React.ElementType; color: string }> = {
+  new: { label: 'Booked', Icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+  pending: { label: 'Payment Pending', Icon: Clock, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+  dispatched: { label: 'Dispatched', Icon: Truck, color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  delivered: { label: 'Delivered', Icon: CheckCircle2, color: 'text-green-600 bg-green-50 border-green-200' },
+  cancelled: { label: 'Cancelled', Icon: XCircle, color: 'text-red-600 bg-red-50 border-red-200' },
+  breached: { label: 'Cancelled', Icon: XCircle, color: 'text-red-600 bg-red-50 border-red-200' },
+  refunded: { label: 'Refunded', Icon: XCircle, color: 'text-slate-600 bg-slate-50 border-slate-200' },
+};
+
+const bookingId = (id: string) => id.replace(/^NTD[\s-]*/i, '').trim();
+
+function formatDate(millis: number, opts?: Intl.DateTimeFormatOptions) {
+  return new Date(millis).toLocaleDateString('en-IN', opts || { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function expectedDeliveryDate(order: Order): string | null {
+  if (order.status === 'cancelled' || order.status === 'breached' || order.status === 'refunded') return null;
+  const createdAt = order.createdAt || Date.now();
+  const base = order.status === 'dispatched' || order.status === 'delivered'
+    ? createdAt + (5 * 24 * 60 * 60 * 1000)
+    : createdAt;
+  const date = new Date(base);
+  date.setDate(date.getDate() + 7);
+  return formatDate(date.getTime());
+}
+
+function paymentModeLabel(order: Order): string {
+  if (order.paymentMethod === 'prepaid') {
+    return 'Prepaid (Online)';
+  }
+  return 'Cash on Delivery';
+}
+
+function paymentStatus(order: Order): string {
+  if (order.paymentMethod === 'cod') return 'To be collected on delivery';
+  if (order.status === 'new' || order.status === 'dispatched' || order.status === 'delivered') return 'Paid';
+  if (order.status === 'pending') return 'Awaiting payment';
+  return order.status === 'refunded' ? 'Refunded' : order.status.charAt(0).toUpperCase() + order.status.slice(1);
+}
 
 interface OrderTicketProps {
   order: Order;
+  showDownload?: boolean;
 }
 
-export function OrderTicket({ order }: OrderTicketProps) {
-  const handlePrint = () => {
-    window.print();
-  };
+export function OrderTicket({ order, showDownload = true }: OrderTicketProps) {
+  const siteName = SITE.name;
+  const siteUrl = `https://${SITE.domain}`;
+  const cleanId = bookingId(order.id);
+  const ticketId = `ticket-${cleanId}`;
+  const status = statusInfo[order.status];
+  const StatusIcon = status.Icon;
+  const expectedDelivery = expectedDeliveryDate(order);
+  const item = order.items?.[0];
 
   return (
     <div className="space-y-4">
-      <Card id={`ticket-${order.id}`} className="relative overflow-hidden border-2 border-dashed border-primary/30 bg-card/50 backdrop-blur-sm print:shadow-none print:border-solid print:bg-white">
-        {/* Ticket Header (Punch holes style) */}
-        <div className="absolute top-1/2 -left-3 h-6 w-6 rounded-full bg-background border-r-2 border-primary/30 -translate-y-1/2 print:hidden" />
-        <div className="absolute top-1/2 -right-3 h-6 w-6 rounded-full bg-background border-l-2 border-primary/30 -translate-y-1/2 print:hidden" />
-        
+      <Card
+        id={ticketId}
+        className="relative overflow-hidden border-2 border-dashed border-primary/30 bg-gradient-to-br from-card to-primary/[0.03] backdrop-blur-sm print:shadow-none print:border-solid print:bg-white"
+      >
+        {/* Ticket notches */}
+        <div className="absolute top-1/2 -left-4 h-8 w-8 rounded-full bg-background border-r-2 border-primary/30 -translate-y-1/2 print:hidden" />
+        <div className="absolute top-1/2 -right-4 h-8 w-8 rounded-full bg-background border-l-2 border-primary/30 -translate-y-1/2 print:hidden" />
+
         <div className="p-6 md:p-8 space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-primary/10 pb-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-dashed border-primary/20 pb-6">
             <div className="space-y-1">
-              <h2 className="text-2xl font-headline text-primary">Nature of the Divine</h2>
-              <p className="text-xs tracking-widest uppercase text-muted-foreground">Official Shipment Ticket</p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-primary font-bold">Booking Ticket</p>
+              <h2 className="text-2xl font-headline leading-tight">{siteName}</h2>
+              <p className="text-xs text-muted-foreground">An exploration of the divine, consciousness, and the path to spiritual awakening.</p>
             </div>
-            <div className="text-right">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider mb-2">
-                <Hash className="h-3 w-3" /> {order.id.substring(0, 12)}
+            <div className="text-right space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary font-mono text-sm font-bold tracking-widest">
+                <Hash className="h-4 w-4" /> NTD-{cleanId.substring(0, 8).toUpperCase()}
               </div>
-              <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+              <p className="text-xs text-muted-foreground">Booking ID: <span className="font-mono select-all">{cleanId}</span></p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
-                  <User className="h-4 w-4 text-primary/70" />
+          {/* Status banner */}
+          <div className={cn('inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold', status.color)}>
+            <StatusIcon className="h-4 w-4" />
+            {status.label}
+            {order.status === 'new' && <span className="text-xs font-normal opacity-70">· Confirmed</span>}
+          </div>
+
+          {/* Book + details */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            {/* Cover image */}
+            <div className="md:col-span-1">
+              <div className="relative w-28 md:w-full aspect-[2/3] overflow-hidden rounded-xl shadow-lg border border-border/50 mx-auto md:mx-0">
+                <Image
+                  src={BOOK.coverImage}
+                  alt={item?.name || BOOK.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 112px, 200px"
+                />
+              </div>
+              <p className="mt-2 text-center md:text-left text-xs font-bold text-primary">{item?.name || BOOK.title}</p>
+              {item?.variant && (
+                <p className="text-center md:text-left text-[10px] uppercase tracking-widest text-muted-foreground capitalize">{item.variant}</p>
+              )}
+            </div>
+
+            {/* Key details */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
+                    <CalendarDays className="h-4 w-4 text-primary/70" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Booked On</p>
+                    <p className="font-bold text-sm">{formatDate(order.createdAt)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Recipient</p>
-                  <p className="font-bold">{order.name}</p>
-                  <p className="text-xs text-muted-foreground">{order.email}</p>
-                  <p className="text-xs text-muted-foreground">{order.phone}</p>
+                <div className="flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
+                    <Truck className="h-4 w-4 text-primary/70" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Expected Delivery</p>
+                    <p className="font-bold text-sm">{expectedDelivery || '—'}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
+                    <CreditCard className="h-4 w-4 text-primary/70" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Payment Mode</p>
+                    <p className="font-bold text-sm">{paymentModeLabel(order)}</p>
+                    <p className="text-[10px] text-muted-foreground">{paymentStatus(order)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
+                    <Package className="h-4 w-4 text-primary/70" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Amount</p>
+                    <p className="font-bold text-sm text-primary">₹{order.price}</p>
+                    {order.discountAmount > 0 && (
+                      <p className="text-[10px] text-emerald-600">Saved ₹{order.discountAmount}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* Items */}
+              <div className="pt-2 border-t border-dashed border-border/60">
+                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground mb-2">Items</p>
+                <div className="space-y-2">
+                  {order.items?.map((itm, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-sm">
+                      <span className="font-medium">{itm.name} {itm.quantity > 1 ? `× ${itm.quantity}` : ''}</span>
+                      <span className="font-bold">₹{itm.price}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {order.shippingDetails?.trackingNumber && (
+                <div className="bg-primary/5 p-3 rounded-xl border border-primary/10 flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-primary/70" />
+                  <p className="text-xs text-muted-foreground">Courier tracking: <span className="font-mono font-bold text-foreground select-all">{order.shippingDetails.trackingNumber}</span></p>
+                </div>
+              )}
+            </div>
+
+            {/* Recipient */}
+            <div className="md:col-span-2 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
                   <MapPin className="h-4 w-4 text-primary/70" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Shipping Address</p>
-                  <p className="text-sm leading-relaxed">
-                    {order.address}<br />
-                    {order.street && <>{order.street}<br /></>}
-                    {order.city}, {order.state} {order.pinCode}<br />
-                    {order.country}
+                  <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Deliver To</p>
+                  <p className="font-bold text-sm">{order.name}</p>
+                  <p className="text-xs text-muted-foreground">{order.phone}</p>
+                  <p className="text-xs text-muted-foreground">{order.email}</p>
+                  <p className="text-sm leading-relaxed mt-2">
+                    {order.address}
+                    {order.street && <>, {order.street}</>}
+                    <br />{order.city}, {order.state} {order.pinCode}
+                    <br />{order.country}
                   </p>
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
-                  <Package className="h-4 w-4 text-primary/70" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] uppercase tracking-tighter text-muted-foreground mb-1">Purchased Items</p>
-                  <div className="space-y-2">
-                    {order.items?.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-start border-b border-dashed border-slate-100 pb-1 last:border-0">
-                        <div>
-                          <p className="font-bold text-xs leading-tight">{item.name}</p>
-                          <p className="text-[9px] text-muted-foreground uppercase">{item.type} {item.variant ? `• ${item.variant}` : ''}</p>
-                        </div>
-                        <p className="text-xs font-bold">₹{item.price}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 pt-2 border-t border-primary/20">
-                    <p className="text-xs font-bold text-primary flex justify-between">
-                      <span>Total Paid:</span>
-                      <span>₹{order.price}</span>
-                    </p>
-                    <p className="text-[9px] text-muted-foreground uppercase mt-1">Method: {order.paymentMethod.toUpperCase()}</p>
-                  </div>
-                </div>
-              </div>
 
               <div className="flex items-start gap-3">
                 <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center shrink-0">
-                  <Truck className="h-4 w-4 text-primary/70" />
+                  <Globe className="h-4 w-4 text-primary/70" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Logistics Status</p>
-                  <p className="text-sm font-medium">{order.status === 'new' ? 'Awaiting Dispatch' : order.status.toUpperCase()}</p>
-                  {order.shippingDetails?.trackingNumber && (
-                    <p className="text-xs text-primary font-mono mt-1">Tracking: {order.shippingDetails.trackingNumber}</p>
-                  )}
+                  <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Track Your Booking</p>
+                  <p className="text-xs font-mono text-primary">{siteUrl}/track</p>
+                  <p className="text-xs text-muted-foreground mt-1">Keep your Booking ID safe — use it to track delivery any time.</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-primary/10 pt-6 flex flex-col items-center gap-4">
-            <div className="text-center space-y-1">
-              <p className="text-[10px] text-muted-foreground italic">Thank you for your resonance with the Divine Architecture.</p>
-              <p className="text-[10px] font-bold text-primary/50 tracking-[0.3em] uppercase">Alfas B • Nature of the Divine</p>
+          {/* Barcode */}
+          <div className="border-t-2 border-dashed border-primary/20 pt-6 flex flex-col items-center gap-3">
+            <div className="flex items-end gap-[3px] h-12 select-none opacity-60">
+              {Array.from({ length: 48 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-foreground"
+                  style={{ width: i % 4 === 0 ? 3 : 1, height: `${14 + ((i * 17) % 26)}px` }}
+                />
+              ))}
             </div>
+            <p className="font-mono text-sm font-bold tracking-[0.3em] text-primary/70">NTD-{cleanId.substring(0, 8).toUpperCase()}</p>
+            <p className="text-center text-[10px] text-muted-foreground">
+              {siteName} · {siteUrl} · Thank you for your resonance with the Divine Architecture.
+            </p>
           </div>
-        </div>
-        
-        {/* Decorative elements */}
-        <div className="absolute bottom-0 right-0 p-2 opacity-5">
-           <Package className="h-24 w-24" />
         </div>
       </Card>
 
-      <Button 
-        variant="outline" 
-        className="w-full gap-2 rounded-xl group border-primary/20 hover:border-primary hover:bg-primary/5 transition-all print:hidden"
-        onClick={handlePrint}
-      >
-        <Download className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
-        Download Order Ticket
-      </Button>
-      <p className="text-[10px] text-center text-muted-foreground print:hidden">
-        Keep this ticket as a record of your Order ID. You can use it to recover your order if you lose access to your account.
-      </p>
+      {showDownload && (
+        <>
+          <Button
+            variant="outline"
+            className="w-full gap-2 rounded-xl group border-primary/20 hover:border-primary hover:bg-primary/5 transition-all print:hidden"
+            onClick={() => window.print()}
+          >
+            <Download className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
+            Save / Download Ticket
+          </Button>
+          <p className="text-[10px] text-center text-muted-foreground print:hidden">
+            Save or print this ticket. It carries your Booking ID — enter it in <span className="font-semibold">Track Booking</span> in the header to see delivery status anytime.
+          </p>
+        </>
+      )}
 
       <style jsx global>{`
         @media print {
           body * {
             visibility: hidden;
           }
-          #ticket-${order.id}, #ticket-${order.id} * {
+          #${ticketId}, #${ticketId} * {
             visibility: visible;
           }
-          #ticket-${order.id} {
+          #${ticketId} {
             position: absolute;
             left: 0;
             top: 0;

@@ -2,11 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, ScrollText, User, ShoppingBag } from 'lucide-react';
+import { Home, BookOpen, ScrollText, Search, ShoppingBag } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
-import { BOTTOM_NAV, NAV } from '@/lib/constants';
+import { BOTTOM_NAV } from '@/lib/constants';
 
 interface NavItem {
   href: string;
@@ -17,21 +16,18 @@ interface NavItem {
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const { user } = useAuth();
 
   const items: NavItem[] = [
     { href: '/', label: BOTTOM_NAV.home, icon: Home, match: p => p === '/' },
     { href: '/#synopsis', label: BOTTOM_NAV.about, icon: BookOpen, match: p => p === '/#synopsis' },
     { href: '/#chapters', label: BOTTOM_NAV.chapter, icon: ScrollText, match: p => p === '/#chapters' },
     {
-      href: user ? '/orders' : '/login',
-      label: user ? BOTTOM_NAV.orders : BOTTOM_NAV.login,
-      icon: User,
-      match: p => p.startsWith('/orders') || p.startsWith('/login') || p.startsWith('/signup'),
+      href: '/track',
+      label: BOTTOM_NAV.track,
+      icon: Search,
+      match: p => p.startsWith('/track') || p.startsWith('/ticket'),
     },
   ];
-
-  const activeCount = items.filter(item => item.match(pathname)).length;
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">

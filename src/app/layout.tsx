@@ -7,7 +7,6 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Toaster } from "@/components/ui/toaster";
 import { SITE, BOOK, META, SCHEMA } from "@/lib/constants";
-import { AuthProvider } from "@/hooks/useAuth";
 import { LocationProvider } from "@/hooks/useLocation";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -143,17 +142,15 @@ export default function RootLayout({
           garamond.variable
         )}
       >
-        <AuthProvider>
-          <LocationProvider>
-            <div className="relative flex min-h-screen flex-col pb-20 md:pb-0">
-              <SiteHeader />
-              <main className="flex-1">{children}</main>
-              <SiteFooter />
-              <MobileBottomNav />
-            </div>
-            <Toaster />
-          </LocationProvider>
-        </AuthProvider>
+        <LocationProvider>
+          <div className="relative flex min-h-screen flex-col pb-20 md:pb-0">
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+            <MobileBottomNav />
+          </div>
+          <Toaster />
+        </LocationProvider>
       </body>
     </html>
   );

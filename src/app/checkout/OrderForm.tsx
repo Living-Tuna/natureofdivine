@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { placeOrder, validateDiscountCode, fetchOrderByIdAction } from '@/lib/actions';
+import { placeOrder, validateDiscountCode, getBookingAction, trackEvent } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight, Truck, CreditCard, Book, Tag, ArrowLeft, User, MapPin, BadgePercent, Ship, ShoppingCart, Package } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { Stock, BookVariant, OrderItem, OrderItemStatus } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
@@ -151,7 +150,6 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const { user, loading: authLoading } = useAuth();
     const { priceData, loading: priceLoading } = useLocation();
 
     const [state, dispatch] = useReducer(formReducer, initialState);
@@ -176,6 +174,11 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
 
     // Initialize Item from Search Params (single book)
     useEffect(() => {
+        trackEvent('checkout_reached_shipping');
+    }, []);
+
+    // Initialize Item from Search Params (single book)
+    useEffect(() => {
         const variant = (searchParams.get('variant') as BookVariant | null) || 'paperback';
         const ntd = books.find(b => b.id === 'nature-of-the-divine') || books[0];
 
@@ -194,13 +197,13 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
     // Handle Order Verification (Payment Redirects)
     useEffect(() => {
         const orderId = searchParams.get('orderId');
-        if (orderId && user) {
+        if (orderId) {
             setIsVerifying(true);
             const checkStatus = async () => {
                 try {
-                    const order = await fetchOrderByIdAction(user.uid, orderId);
+                    const order = await getBookingAction(orderId);
                     if (order && (order.status === 'new' || order.status === 'dispatched')) {
-                        router.push(`/orders?success=true&orderId=${orderId}`);
+                        router.push(`/ticket/${orderId}?success=true`);
                     }
                 } catch (e) {
                     console.error("Order verification error:", e);
@@ -210,7 +213,7 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
             };
             checkStatus();
         }
-    }, [searchParams, user, router]);
+    }, [searchParams, router]);
 
     const handleNextStep = () => {
         if (state.step === 'details') {
@@ -227,6 +230,7 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
             }
             calculateTotal();
         }
+        trackEvent('checkout_payment_entered');
         dispatch({ type: 'NEXT_STEP' });
     };
 
@@ -277,16 +281,6 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
     };
 
     const handlePlaceOrder = async () => {
-        if (!user) {
-            toast({
-                variant: 'destructive',
-                title: 'Sign in Required',
-                description: 'Please sign in to complete your purchase.'
-            });
-            router.push(`/login?redirect=/checkout?${searchParams.toString()}`);
-            return;
-        }
-
         if (!state.paymentMethod) {
             toast({
                 variant: 'destructive',
@@ -303,7 +297,6 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
             const payload = {
                 ...state.details,
                 items: state.items,
-                userId: user.uid,
                 discountCode: state.discount.applied ? state.discount.code : undefined,
                 paymentMethod: state.paymentMethod,
             };
@@ -313,7 +306,7 @@ export function OrderForm({ stock, settings }: { stock: Stock, settings: SiteSet
                 if (result.paymentData?.redirectUrl) {
                     window.location.href = result.paymentData.redirectUrl;
                 } else {
-                    router.push(`/orders?success=true&orderId=${result.orderId}`);
+                    router.push(`/ticket/${result.orderId}?success=true`);
                 }
             } else {
                 toast({

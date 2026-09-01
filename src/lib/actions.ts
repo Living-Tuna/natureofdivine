@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { headers } from 'next/headers';
 import axios from 'axios';
-import { getOrdersByUserId, updateOrderStatus, addOrder, getOrderById, updateOrderPaymentStatus } from './order-store';
+import { getOrdersByUserId, updateOrderStatus, addOrder, getOrderById, updateOrderPaymentStatus, getOrderByBookingId } from './order-store';
 import { revalidatePath } from 'next/cache';
 import { addLog } from './log-store';
 import { decreaseStock } from './stock-store';
@@ -11,7 +11,7 @@ import { getDiscount, incrementDiscountUsage } from './discount-store';
 import { addReview as addReviewToStore } from './review-store';
 import { v4 as uuidv4 } from 'uuid';
 import { v2 as cloudinary } from 'cloudinary';
-import { addEvent } from './analytics-store';
+import { addEvent, getFunnel, type ConversionFunnel } from './analytics-store';
 import { SHA256 } from 'crypto-js';
 import { getChapters } from './chapter-store';
 
@@ -47,7 +47,7 @@ const OrderFormSchema = z.object({
   country: z.string().min(2, 'Please select a country.'),
   state: z.string().min(2, 'Please select a state.'),
   pinCode: z.string().min(3, 'Please enter a valid PIN code.'),
-  userId: z.string().min(1, 'User ID is required.'),
+  userId: z.string().optional(),
   discountCode: z.string().optional(),
   paymentMethod: z.enum(['cod', 'prepaid']),
   shippingMethod: z.object({
@@ -145,8 +145,10 @@ export async function placeOrder(payload: OrderPayload): Promise<{ success: bool
     const shippingCost = 0; // FREE shipping always
     const totalPrice = finalPrice + shippingCost;
 
+    const orderUserId = userId || '';
+
     const newOrderData: Omit<Order, 'id' | 'status' | 'createdAt' | 'hasReview' | 'paymentDetails'> = {
-      userId,
+      userId: orderUserId,
       name: validatedFields.data.name,
       phone: validatedFields.data.phone,
       email: validatedFields.data.email,
@@ -171,15 +173,15 @@ export async function placeOrder(payload: OrderPayload): Promise<{ success: bool
       }
     };
 
-    await addLog('info', 'Adding order to database', { userId, itemsCount: items.length });
+    await addLog('info', 'Adding order to database', { userId: orderUserId, itemsCount: items.length });
     const newOrder = await addOrder(newOrderData);
     await addLog('info', 'Order created', { orderId: newOrder.id });
 
     if (paymentMethod === 'cod') {
-      await updateOrderStatus(userId, newOrder.id, 'new');
+      await updateOrderStatus(orderUserId, newOrder.id, 'new');
       await decreaseStock(items[0]?.variant || 'paperback', 1);
       if (discountCode) await incrementDiscountUsage(discountCode);
-      revalidatePath('/orders');
+      revalidatePath('/ticket/' + newOrder.id);
       await addEvent('order_placed_cod');
       return { success: true, message: 'Order created successfully!', orderId: newOrder.id };
     }
@@ -334,6 +336,10 @@ export async function fetchOrderByIdAction(userId: string, orderId: string) {
   return await getOrderById(userId, orderId);
 }
 
+export async function getBookingAction(bookingId: string) {
+  return await getOrderByBookingId(bookingId);
+}
+
 const ReviewSchema = z.object({
   orderId: z.string(),
   userId: z.string(),
@@ -361,7 +367,6 @@ export async function submitReview(data: z.infer<typeof ReviewSchema>) {
     await addReviewToStore(reviewData);
     await updateOrderStatus(validatedData.userId, validatedData.orderId, 'delivered', true);
     revalidatePath('/');
-    revalidatePath('/orders');
     return { success: true, message: 'Review submitted successfully.' };
   } catch (error: any) {
     const errorMessage = error.message || 'Failed to submit review';
@@ -403,4 +408,11 @@ export async function trackEvent(type: string, metadata?: Record<string, any>): 
 
 export async function fetchChaptersAction(): Promise<SampleChapter[]> {
   return await getChapters();
+}
+
+export async function fetchFunnel(
+  timeRange: 'today' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' = 'daily',
+  customRange?: { start: number, end: number }
+): Promise<ConversionFunnel> {
+  return await getFunnel(timeRange, customRange);
 }
