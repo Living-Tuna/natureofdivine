@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowRight, Truck, User, BadgePercent, Ship, ShoppingCart, Package } from 'lucide-react';
+import { Loader2, ArrowRight, Truck, User, BadgePercent, Ship, ShoppingCart, Package, Book } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { Stock, BookVariant, OrderItem, OrderItemStatus } from '@/lib/definitions';
